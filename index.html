@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Termo de Responsabilidade</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      background-color: #f7f7f7;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 25px;
+      padding: 10px 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #razaoSocialField {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Gerar Termo de Responsabilidade</h2>
+
+  <label>Empregadora / Contratante:</label>
+  <input id="empregadora" type="text" placeholder="Ex: CCXP ou Omelete">
+
+  <label>Nome do colaborador / responsável legal:</label>
+  <input id="empregado" type="text" placeholder="Ex: Natalia Fernandes ou Giulia Freitas">
+
+  <div id="razaoSocialField">
+    <label>Razão Social (para CNPJ):</label>
+    <input id="razaoSocial" type="text" placeholder="Ex: Giulia Freitas Pires LTDA">
+  </div>
+
+  <label>CPF ou CNPJ:</label>
+  <input id="documento" type="text" placeholder="Ex: 334.073.748-79 ou 59.943.865/0001-34" oninput="verificarDocumento()">
+
+  <label>Equipamentos entregues:</label>
+  <textarea id="equipamentos" placeholder="Ex: Notebook Dell Inspiron 14 O&CO000995"></textarea>
+
+  <label>Cidade:</label>
+  <input id="cidade" type="text" value="São Paulo">
+
+  <button onclick="gerarPDF()">Gerar PDF</button>
+
+  <script>
+    function verificarDocumento() {
+      const documento = document.getElementById("documento").value.replace(/\D/g, "");
+      const campoRazao = document.getElementById("razaoSocialField");
+      if (documento.length > 11) {
+        campoRazao.style.display = "block";
+      } else {
+        campoRazao.style.display = "none";
+      }
+    }
+
+    function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const empregadora = document.getElementById("empregadora").value;
+      const empregado = document.getElementById("empregado").value;
+      const razaoSocial = document.getElementById("razaoSocial").value;
+      const documento = document.getElementById("documento").value;
+      const equipamentos = document.getElementById("equipamentos").value;
+      const cidade = document.getElementById("cidade").value;
+
+      const hoje = new Date();
+      const dataFormatada = hoje.toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
+      const data = `${cidade}, ${dataFormatada}.`;
+
+      const isPJ = documento.replace(/\D/g, '').length > 11;
+
+      let texto = "";
+
+      if (!isPJ) {
+        // Pessoa Física
+        texto = `
+TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS
+
+EMPREGADORA: ${empregadora}
+EMPREGADO: ${empregado}
+APARELHOS ENTREGUES: ${equipamentos}
+
+Na qualidade de EMPREGADO e da EMPREGADORA, declaro que:
+
+a) recebi nesta data o(s) equipamento(s) acima descrito(s) e respectivos acessórios;
+
+b) o(s) equipamento(s) acima descrito(s) e respectivos acessórios permanecerão sob minha posse e guarda e serão utilizados com o zelo devido;
+
+c) o(s) equipamento(s) acima descrito(s) e respectivos acessórios são ferramenta exclusivamente destinada ao uso no e para o trabalho, sendo vedada a sua utilização para outros fins;
+
+d) o(s) equipamento(s) acima descrito(s) e respectivos acessórios não são benefício, complemento salarial, salário indireto, salário in natura ou qualquer espécie de contraprestação pelo trabalho realizado;
+
+e) reconheço o direito da EMPREGADORA, a qualquer tempo e segundo seu exclusivo critério, exigir a devolução do(s) equipamento(s) acima descrito(s) e respectivos acessórios, independentemente de pré-aviso ou comunicação escrita;
+
+f) estou ciente de que os gastos decorrentes da utilização do(s) equipamento(s) acima descrito(s) para fins pessoais e particulares, uso indevido ou avarias serão de minha inteira responsabilidade.
+
+Na eventualidade de cessação do meu vínculo empregatício com a EMPREGADORA, independentemente da causa ou motivo, obrigo-me a devolver, no ato da dispensa, o(s) equipamento(s) acima descrito(s) e respectivos acessórios em perfeito estado de conservação e funcionamento.
+
+Assumo o compromisso de utilizar o(s) equipamento(s) acima descrito(s) de acordo com as recomendações do fabricante e orientação da EMPREGADORA, bem como de comunicar imediatamente a esta a ocorrência de extravio, defeito ou avaria que impeça o seu perfeito funcionamento.
+
+Nos termos do artigo 462 da CLT, fica a EMPREGADORA autorizada a descontar do meu salário e/ou de minhas verbas rescisórias os valores devidos em razão de uso inadequado, perda ou avaria, por dolo ou culpa, do(s) equipamento(s) acima descrito(s), bem como eventuais gastos com o seu uso pessoal e particular, independentemente de pré-aviso ou comunicação escrita.
+
+${data}
+
+_____________________________________
+${empregado}
+CPF nº ${documento}
+`;
+      } else {
+        // Pessoa Jurídica
+        texto = `
+TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS
+
+CONTRATANTE: ${empregadora}
+REPRESENTANTE LEGAL DO CONTRATADO: ${empregado}
+RAZÃO SOCIAL: ${razaoSocial}
+APARELHOS ENTREGUES: ${equipamentos}
+
+Na qualidade de REPRESENTANTE LEGAL DO CONTRATADO, declaro que:
+
+a) recebi nesta data o(s) equipamento(s) acima descrito(s) e respectivos acessórios;
+
+b) o(s) equipamento(s) acima descrito(s) e respectivos acessórios permanecerão sob minha posse e guarda e serão utilizados com o zelo devido;
+
+c) o(s) equipamento(s) acima descrito(s) e respectivos acessórios são ferramenta exclusivamente destinada ao uso para a prestação de serviços contratada, sendo vedada a sua utilização para outros fins;
+
+d) reconheço o direito da CONTRATANTE, a qualquer tempo e segundo seu exclusivo critério, exigir a devolução do(s) equipamento(s) acima descrito(s) e respectivos acessórios, independentemente de pré-aviso ou comunicação escrita;
+
+e) estou ciente de que os gastos decorrentes da utilização do(s) equipamento(s) acima descrito(s) para fins pessoais e particulares, uso indevido ou avarias serão de minha inteira responsabilidade.
+
+Na eventualidade de cessação do Contrato de Prestação de Serviços firmado, independentemente da causa ou motivo, obrigo-me a devolver, no ato da rescisão, o(s) equipamento(s) acima descrito(s) e respectivos acessórios em perfeito estado de conservação e funcionamento.
+
+Assumo o compromisso de utilizar o(s) equipamento(s) acima descrito(s) de acordo com as recomendações do fabricante e orientação da CONTRATANTE, bem como de comunicar imediatamente a esta a ocorrência de extravio, defeito ou avaria que impeça o seu perfeito funcionamento.
+
+Nos termos dos artigos 186 e 927 do Código Civil, fica a CONTRATANTE autorizada a descontar dos honorários previstos no Contrato de Prestação de Serviços os valores devidos em razão de uso inadequado, perda ou avaria, por dolo ou culpa, do(s) equipamento(s) acima descrito(s), bem como eventuais gastos com o seu uso pessoal e particular, independentemente de pré-aviso ou comunicação escrita.
+
+${data}
+
+_____________________________________
+${empregado}
+${razaoSocial}
+CNPJ: ${documento}
+`;
+      }
+
+      const nomeArquivo = isPJ
+        ? `PJ_Termo_de_Responsabilidade_${razaoSocial || empregado}.pdf`
+        : `Termo_de_Responsabilidade_${empregado}.pdf`;
+
+      // Cabeçalho com título
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.text("TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS", 105, 20, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      const lines = doc.splitTextToSize(texto, 180);
+      doc.text(lines, 15, 30);
+      doc.save(nomeArquivo);
+    }
+  </script>
+</body>
+</html>
