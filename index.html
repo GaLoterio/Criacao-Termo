@@ -3,175 +3,538 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Termo de Responsabilidade</title>
   <link rel="icon" type="image/jpeg" href="images/logoOMLT.jpeg">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
   <style>
     :root {
-      --bg-light: rgba(255, 255, 255, 0.85);
-      --bg-dark: rgba(30, 30, 30, 0.85);
-      --text-light: #333;
-      --text-dark: #f7f7f7;
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --bg-light: rgba(255, 255, 255, 0.95);
+      --bg-dark: rgba(15, 15, 15, 0.95);
+      --text-light: #2d3748;
+      --text-dark: #f7fafc;
       --card-light: rgba(255, 255, 255, 0.9);
-      --card-dark: rgba(42, 42, 42, 0.9);
-      --accent: #007bff;
-      --accent-hover: #0056b3;
+      --card-dark: rgba(26, 32, 44, 0.9);
+      --accent: #667eea;
+      --accent-hover: #5a67d8;
+      --shadow-light: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --shadow-dark: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+      --border-radius: 20px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Fundo com imagem */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      max-width: 700px;
-      margin: 40px auto;
-      color: var(--text-light);
-      padding: 30px;
-      border-radius: 12px;
-      background-image: url("images/imgFundo.jpeg");
-      background-size: cover;
-      background-position: center;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       background-attachment: fixed;
-      transition: background-color 0.4s, color 0.4s;
+      color: var(--text-light);
+      transition: var(--transition);
+      overflow-x: hidden;
     }
 
-    /* Container central translúcido */
+    /* Animação de partículas de fundo */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+      z-index: -1;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+
+    /* Container principal */
+    .main-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+    }
+
     .container {
-      background-color: var(--bg-light);
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(8px);
+      background: var(--bg-light);
+      backdrop-filter: blur(20px);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-light);
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    h2 {
-      text-align: center;
-      color: inherit;
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
+
+    /* Efeito de brilho no container */
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    /* Header com logo e título */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .logo img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+      animation: fadeInUp 1s ease-out 0.2s both;
+    }
+
+    .subtitle {
+      color: #64748b;
+      font-size: 1.1rem;
+      font-weight: 400;
+      animation: fadeInUp 1s ease-out 0.4s both;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Formulário */
+    .form-group {
+      margin-bottom: 25px;
+      animation: fadeInUp 1s ease-out calc(0.6s + var(--delay, 0s)) both;
+    }
+
+    .form-group:nth-child(1) { --delay: 0s; }
+    .form-group:nth-child(2) { --delay: 0.1s; }
+    .form-group:nth-child(3) { --delay: 0.2s; }
+    .form-group:nth-child(4) { --delay: 0.3s; }
+    .form-group:nth-child(5) { --delay: 0.4s; }
+    .form-group:nth-child(6) { --delay: 0.5s; }
 
     label {
       display: block;
-      margin-top: 15px;
-      font-weight: bold;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text-light);
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+
+    .input-wrapper {
+      position: relative;
     }
 
     input,
     textarea {
       width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      transition: background-color 0.3s, color 0.3s;
+      padding: 16px 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255, 255, 255, 0.8);
+      transition: var(--transition);
+      outline: none;
     }
 
-    button {
-      margin-top: 25px;
-      padding: 10px 18px;
-      background-color: var(--accent);
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      transform: translateY(-2px);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #a0aec0;
+      transition: var(--transition);
+    }
+
+    input:focus::placeholder,
+    textarea:focus::placeholder {
+      opacity: 0.7;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* Botão principal */
+    .btn-primary {
+      background: var(--primary-gradient);
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 15px;
+      padding: 18px 32px;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
       cursor: pointer;
       width: 100%;
-      transition: background-color 0.3s;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      animation: fadeInUp 1s ease-out 0.8s both;
     }
 
-    button:hover {
-      background-color: var(--accent-hover);
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
     }
 
+    .btn-primary:active {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    /* Campo oculto com animação */
     #razaoSocialField {
       display: none;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: var(--transition);
     }
 
-    /* --- Modo escuro --- */
+    #razaoSocialField.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Botão de tema */
+    #toggle-theme {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-light);
+      transition: var(--transition);
+      z-index: 1000;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
+    }
+
+    #toggle-theme:hover {
+      transform: scale(1.1) rotate(180deg);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Modo escuro */
     body.dark-mode {
       color: var(--text-dark);
     }
 
     body.dark-mode .container {
-      background-color: var(--bg-dark);
+      background: var(--bg-dark);
+      box-shadow: var(--shadow-dark);
     }
 
     body.dark-mode input,
     body.dark-mode textarea {
-      background-color: var(--card-dark);
+      background: var(--card-dark);
       color: var(--text-dark);
-      border: 1px solid #666;
+      border-color: #4a5568;
     }
 
-    body.dark-mode button {
-      background-color: #2196f3;
-      color: white;
+    body.dark-mode input:focus,
+    body.dark-mode textarea:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
     }
 
-    body.dark-mode button:hover {
-      background-color: #1769aa;
+    body.dark-mode label {
+      color: var(--text-dark);
     }
 
-    /* Botão de alternância flutuante */
-    #toggle-theme {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 15px;
+      }
+
+      .container {
+        padding: 30px 25px;
+        margin: 10px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      input,
+      textarea {
+        padding: 14px 16px;
+      }
+
+      .btn-primary {
+        padding: 16px 24px;
+        font-size: 1rem;
+      }
+
+      #toggle-theme {
+        width: 50px;
+        height: 50px;
+        bottom: 20px;
+        right: 20px;
+        font-size: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 25px 20px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      .logo {
+        width: 60px;
+        height: 60px;
+      }
+
+      .logo img {
+        width: 40px;
+        height: 40px;
+      }
+    }
+
+    /* Loading state */
+    .btn-primary.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .btn-primary.loading::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top: 2px solid white;
       border-radius: 50%;
-      background-color: rgba(0, 0, 0, 0.2);
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      transition: all 0.3s ease;
-      opacity: 0.85;
-      z-index: 1000;
+      animation: spin 1s linear infinite;
     }
 
-    #toggle-theme:hover {
-      opacity: 1;
-      transform: scale(1.1);
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
-    body.dark-mode #toggle-theme {
-      background-color: rgba(255, 255, 255, 0.15);
-      color: #fff;
+    /* Animações de entrada para elementos */
+    .form-group {
+      animation: fadeInUp 0.6s ease-out both;
     }
+
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
+    .form-group:nth-child(4) { animation-delay: 0.4s; }
+    .form-group:nth-child(5) { animation-delay: 0.5s; }
+    .form-group:nth-child(6) { animation-delay: 0.6s; }
   </style>
 </head>
 
 <body>
   <button id="toggle-theme">🌙</button>
 
-  <div class="container">
-    <h2>Termo de Responsabilidade TI </h2>
+  <div class="main-container">
+    <div class="container">
+      <div class="header">
+        <div class="logo">
+          <img src="images/logoOMLT.jpeg" alt="Logo OMLT">
+        </div>
+        <h1>Termo de Responsabilidade</h1>
+        <p class="subtitle">Geração automática de documentos de entrega de equipamentos</p>
+      </div>
 
-    <label>Empregadora / Contratante:</label>
-    <input id="empregadora" type="text" placeholder="CCXP ou Omelete">
+      <form>
+        <div class="form-group">
+          <label for="empregadora">
+            <i class="fas fa-building"></i> Empregadora / Contratante
+          </label>
+          <div class="input-wrapper">
+            <input id="empregadora" type="text" placeholder="Ex: CCXP ou Omelete" required>
+          </div>
+        </div>
 
-    <label>Nome do colaborador / responsável legal:</label>
-    <input id="empregado" type="text" placeholder="João Rafael">
+        <div class="form-group">
+          <label for="empregado">
+            <i class="fas fa-user"></i> Nome do colaborador / responsável legal
+          </label>
+          <div class="input-wrapper">
+            <input id="empregado" type="text" placeholder="Ex: João Rafael" required>
+          </div>
+        </div>
 
-    <div id="razaoSocialField">
-      <label>Razão Social (para CNPJ):</label>
-      <input id="razaoSocial" type="text" placeholder="ex: Nome da empresa LTDA">
+        <div class="form-group" id="razaoSocialField">
+          <label for="razaoSocial">
+            <i class="fas fa-industry"></i> Razão Social (para CNPJ)
+          </label>
+          <div class="input-wrapper">
+            <input id="razaoSocial" type="text" placeholder="Ex: Nome da empresa LTDA">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="documento">
+            <i class="fas fa-id-card"></i> CPF ou CNPJ
+          </label>
+          <div class="input-wrapper">
+            <input id="documento" type="text" placeholder="Ex: 000.000.000-00 ou 00.000.000/000-00"
+              oninput="verificarDocumento()" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="equipamentos">
+            <i class="fas fa-laptop"></i> Equipamentos entregues
+          </label>
+          <div class="input-wrapper">
+            <textarea id="equipamentos" placeholder="Ex: Notebook O&CO000123" required></textarea>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="cidade">
+            <i class="fas fa-map-marker-alt"></i> Cidade
+          </label>
+          <div class="input-wrapper">
+            <input id="cidade" type="text" value="São Paulo" required>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" onclick="gerarPDF()">
+          <i class="fas fa-file-pdf"></i> Gerar PDF
+        </button>
+      </form>
     </div>
-
-    <label>CPF ou CNPJ:</label>
-    <input id="documento" type="text" placeholder="Ex: 000.000.000-00 ou 00.000.000/000-00"
-      oninput="verificarDocumento()">
-
-    <label>Equipamentos entregues:</label>
-    <textarea id="equipamentos" placeholder="Ex: Notebook O&CO000123"></textarea>
-
-    <label>Cidade:</label>
-    <input id="cidade" type="text" value="São Paulo">
-
-    <button onclick="gerarPDF()">Gerar PDF</button>
   </div>
 
   <script>
@@ -181,6 +544,12 @@
       document.body.classList.toggle("dark-mode");
       toggleBtn.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
       localStorage.setItem("tema", document.body.classList.contains("dark-mode") ? "dark" : "light");
+      
+      // Animação do botão
+      toggleBtn.style.transform = "scale(1.2) rotate(180deg)";
+      setTimeout(() => {
+        toggleBtn.style.transform = "scale(1) rotate(0deg)";
+      }, 300);
     });
 
     // Mantém o modo entre sessões
@@ -189,37 +558,129 @@
       toggleBtn.textContent = "☀️";
     }
 
+    // Animação de entrada dos elementos
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    // Observar elementos do formulário
+    document.addEventListener('DOMContentLoaded', () => {
+      const formGroups = document.querySelectorAll('.form-group');
+      formGroups.forEach(group => {
+        observer.observe(group);
+      });
+    });
+
     function verificarDocumento() {
       const documento = document.getElementById("documento").value.replace(/\D/g, "");
       const campoRazao = document.getElementById("razaoSocialField");
-      campoRazao.style.display = documento.length > 11 ? "block" : "none";
+      
+      if (documento.length > 11) {
+        campoRazao.classList.add("show");
+      } else {
+        campoRazao.classList.remove("show");
+      }
     }
 
-    function gerarPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      const empregadora = document.getElementById("empregadora").value;
-      const empregado = document.getElementById("empregado").value;
-      const razaoSocial = document.getElementById("razaoSocial").value;
-      const documento = document.getElementById("documento").value;
-      const equipamentos = document.getElementById("equipamentos").value;
-      const cidade = document.getElementById("cidade").value;
-
-      const hoje = new Date();
-      const dataFormatada = hoje.toLocaleDateString("pt-BR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric"
+    // Validação em tempo real
+    function validarFormulario() {
+      const campos = ['empregadora', 'empregado', 'documento', 'equipamentos', 'cidade'];
+      let valido = true;
+      
+      campos.forEach(campo => {
+        const input = document.getElementById(campo);
+        if (!input.value.trim()) {
+          input.style.borderColor = '#e53e3e';
+          input.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.1)';
+          valido = false;
+        } else {
+          input.style.borderColor = '#e2e8f0';
+          input.style.boxShadow = 'none';
+        }
       });
-      const data = `${cidade}, ${dataFormatada}.`;
+      
+      return valido;
+    }
 
-      const isPJ = documento.replace(/\D/g, '').length > 11;
+    // Adicionar validação em tempo real
+    document.addEventListener('DOMContentLoaded', () => {
+      const inputs = document.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        input.addEventListener('blur', validarFormulario);
+        input.addEventListener('input', () => {
+          if (input.value.trim()) {
+            input.style.borderColor = '#e2e8f0';
+            input.style.boxShadow = 'none';
+          }
+        });
+      });
+    });
 
-      let texto = "";
+    function gerarPDF() {
+      // Validação antes de gerar
+      if (!validarFormulario()) {
+        // Animação de shake para indicar erro
+        const container = document.querySelector('.container');
+        container.style.animation = 'shake 0.5s ease-in-out';
+        setTimeout(() => {
+          container.style.animation = '';
+        }, 500);
+        
+        // Mostrar mensagem de erro
+        const btn = document.querySelector('.btn-primary');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Preencha todos os campos';
+        btn.style.background = 'linear-gradient(135deg, #e53e3e 0%, #c53030 100%)';
+        
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.style.background = '';
+        }, 3000);
+        
+        return;
+      }
 
-      if (!isPJ) {
-        texto = `
+      // Estado de loading
+      const btn = document.querySelector('.btn-primary');
+      btn.classList.add('loading');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+      btn.disabled = true;
+      // Simular delay para mostrar loading
+      setTimeout(() => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const empregadora = document.getElementById("empregadora").value;
+        const empregado = document.getElementById("empregado").value;
+        const razaoSocial = document.getElementById("razaoSocial").value;
+        const documento = document.getElementById("documento").value;
+        const equipamentos = document.getElementById("equipamentos").value;
+        const cidade = document.getElementById("cidade").value;
+
+        const hoje = new Date();
+        const dataFormatada = hoje.toLocaleDateString("pt-BR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+        const data = `${cidade}, ${dataFormatada}.`;
+
+        const isPJ = documento.replace(/\D/g, '').length > 11;
+
+        let texto = "";
+
+        if (!isPJ) {
+          texto = `
 
 EMPREGADORA: ${empregadora}
 EMPREGADO: ${empregado}
@@ -251,8 +712,8 @@ _____________________________________
 ${empregado}
 CPF nº ${documento}
 `;
-      } else {
-        texto = `
+        } else {
+          texto = `
 
 CONTRATANTE: ${empregadora}
 REPRESENTANTE LEGAL DO CONTRATADO: ${empregado}
@@ -283,33 +744,56 @@ ${empregado}
 ${razaoSocial}
 CNPJ: ${documento}
 `;
-      }
+        }
 
-      const nomeArquivo = isPJ
-        ? `PJ_Termo_de_Responsabilidade_${razaoSocial || empregado}.pdf`
-        : `Termo_de_Responsabilidade_${empregado}.pdf`;
+        const nomeArquivo = isPJ
+          ? `PJ_Termo_de_Responsabilidade_${razaoSocial || empregado}.pdf`
+          : `Termo_de_Responsabilidade_${empregado}.pdf`;
 
-      // --- Título centralizado em duas linhas ---
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
+        // --- Título centralizado em duas linhas ---
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
 
-      // Divide automaticamente o título em até duas linhas (máx. 160 mm de largura)
-      const titulo = doc.splitTextToSize(
-        "TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS",
-        160
-      );
+        // Divide automaticamente o título em até duas linhas (máx. 160 mm de largura)
+        const titulo = doc.splitTextToSize(
+          "TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS",
+          160
+        );
 
-      // Centraliza o título verticalmente e horizontalmente
-      const pageWidth = doc.internal.pageSize.getWidth();
-      doc.text(titulo, pageWidth / 2, 25, { align: "center" });
+        // Centraliza o título verticalmente e horizontalmente
+        const pageWidth = doc.internal.pageSize.getWidth();
+        doc.text(titulo, pageWidth / 2, 25, { align: "center" });
 
-      // --- Corpo do texto ---
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      const lines = doc.splitTextToSize(texto, 180);
-      doc.text(lines, 15, 45);
-      doc.save(nomeArquivo);
+        // --- Corpo do texto ---
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        const lines = doc.splitTextToSize(texto, 180);
+        doc.text(lines, 15, 45);
+        doc.save(nomeArquivo);
+
+        // Restaurar botão após sucesso
+        btn.classList.remove('loading');
+        btn.innerHTML = '<i class="fas fa-check"></i> PDF Gerado com Sucesso!';
+        btn.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+        
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fas fa-file-pdf"></i> Gerar PDF';
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 2000);
+      }, 1500);
     }
+
+    // Adicionar animação de shake
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+      }
+    `;
+    document.head.appendChild(style);
   </script>
 </body>
 
