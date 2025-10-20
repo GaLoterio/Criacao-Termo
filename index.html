@@ -3,33 +3,44 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Gerador de Termo de Responsabilidade</title>
+  <title>Termo de Responsabilidade</title>
+  <link rel="icon" type="image/jpeg" href="/Imgages/Logo_OMLT.jpeg">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     :root {
-      --bg-light: #f7f7f7;
-      --bg-dark: #1e1e1e;
+      --bg-light: rgba(255, 255, 255, 0.85);
+      --bg-dark: rgba(30, 30, 30, 0.85);
       --text-light: #333;
       --text-dark: #f7f7f7;
-      --card-light: #ffffff;
-      --card-dark: #2a2a2a;
-      --shadow-light: rgba(0, 0, 0, 0.1);
-      --shadow-dark: rgba(255, 255, 255, 0.05);
+      --card-light: rgba(255, 255, 255, 0.9);
+      --card-dark: rgba(42, 42, 42, 0.9);
       --accent: #007bff;
       --accent-hover: #0056b3;
     }
 
+    /* Fundo com imagem */
     body {
       font-family: Arial, sans-serif;
       max-width: 700px;
       margin: 40px auto;
-      background-color: var(--bg-light);
       color: var(--text-light);
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 0 10px var(--shadow-light);
+      background-image: url("/Imgages/ImgFundo.jpg");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       transition: background-color 0.4s, color 0.4s;
+    }
+
+    /* Container central translúcido */
+    .container {
+      background-color: var(--bg-light);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
     }
 
     h2 {
@@ -74,18 +85,20 @@
       display: none;
     }
 
-    /* Modo escuro */
+    /* --- Modo escuro --- */
     body.dark-mode {
-      background-color: var(--bg-dark);
       color: var(--text-dark);
-      box-shadow: 0 0 10px var(--shadow-dark);
+    }
+
+    body.dark-mode .container {
+      background-color: var(--bg-dark);
     }
 
     body.dark-mode input,
     body.dark-mode textarea {
       background-color: var(--card-dark);
       color: var(--text-dark);
-      border: 1px solid #555;
+      border: 1px solid #666;
     }
 
     body.dark-mode button {
@@ -97,92 +110,83 @@
       background-color: #1769aa;
     }
 
-    /* Botão de alternância de tema */
+    /* Botão de alternância flutuante */
     #toggle-theme {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background-color: rgba(0, 0, 0, 0.1);
+      background-color: rgba(0, 0, 0, 0.2);
       border: none;
       cursor: pointer;
-      font-size: 16px;
-      color: inherit;
+      font-size: 18px;
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       transition: all 0.3s ease;
-      opacity: 0.8;
+      opacity: 0.85;
       z-index: 1000;
     }
 
     #toggle-theme:hover {
       opacity: 1;
       transform: scale(1.1);
-      background-color: rgba(0, 0, 0, 0.2);
     }
 
     body.dark-mode #toggle-theme {
-      background-color: rgba(255, 255, 255, 0.1);
-      color: #f7f7f7;
-    }
-
-    body.dark-mode #toggle-theme:hover {
-      background-color: rgba(255, 255, 255, 0.2);
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #fff;
     }
   </style>
 </head>
 
 <body>
-  <button id="toggle-theme">🌙 Modo Escuro</button>
+  <button id="toggle-theme">🌙</button>
 
-  <h2>Gerar Termo de Responsabilidade</h2>
+  <div class="container">
+    <h2>Termo de Responsabilidade TI </h2>
 
-  <label>Empregadora / Contratante:</label>
-  <input id="empregadora" type="text" placeholder="CCXP ou Omelete">
+    <label>Empregadora / Contratante:</label>
+    <input id="empregadora" type="text" placeholder="CCXP ou Omelete">
 
-  <label>Nome do colaborador / responsável legal:</label>
-  <input id="empregado" type="text" placeholder="João Rafael">
+    <label>Nome do colaborador / responsável legal:</label>
+    <input id="empregado" type="text" placeholder="João Rafael">
 
-  <div id="razaoSocialField">
-    <label>Razão Social (para CNPJ):</label>
-    <input id="razaoSocial" type="text" placeholder="ex: Nome da empresa LTDA">
+    <div id="razaoSocialField">
+      <label>Razão Social (para CNPJ):</label>
+      <input id="razaoSocial" type="text" placeholder="ex: Nome da empresa LTDA">
+    </div>
+
+    <label>CPF ou CNPJ:</label>
+    <input id="documento" type="text" placeholder="Ex: 000.000.000-00 ou 00.000.000/000-00"
+      oninput="verificarDocumento()">
+
+    <label>Equipamentos entregues:</label>
+    <textarea id="equipamentos" placeholder="Ex: Notebook O&CO000123"></textarea>
+
+    <label>Cidade:</label>
+    <input id="cidade" type="text" value="São Paulo">
+
+    <button onclick="gerarPDF()">Gerar PDF</button>
   </div>
-
-  <label>CPF ou CNPJ:</label>
-  <input id="documento" type="text" placeholder="Ex: 334.073.748-79 ou 59.943.865/0001-34"
-    oninput="verificarDocumento()">
-
-  <label>Equipamentos entregues:</label>
-  <textarea id="equipamentos" placeholder="Ex: Notebook O&CO000123"></textarea>
-
-  <label>Cidade:</label>
-  <input id="cidade" type="text" value="São Paulo">
-
-  <button onclick="gerarPDF()">Gerar PDF</button>
 
   <script>
     // --- Alternância manual de tema ---
     const toggleBtn = document.getElementById("toggle-theme");
     toggleBtn.addEventListener("click", () => {
       document.body.classList.toggle("dark-mode");
-
-      if (document.body.classList.contains("dark-mode")) {
-        toggleBtn.textContent = "☀️ Modo Claro";
-        localStorage.setItem("tema", "dark");
-      } else {
-        toggleBtn.textContent = "🌙 Modo Escuro";
-        localStorage.setItem("tema", "light");
-      }
+      toggleBtn.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+      localStorage.setItem("tema", document.body.classList.contains("dark-mode") ? "dark" : "light");
     });
 
     // Mantém o modo entre sessões
     if (localStorage.getItem("tema") === "dark") {
       document.body.classList.add("dark-mode");
-      toggleBtn.textContent = "☀️ Modo Claro";
+      toggleBtn.textContent = "☀️";
     }
 
     function verificarDocumento() {
@@ -216,7 +220,6 @@
 
       if (!isPJ) {
         texto = `
-TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS
 
 EMPREGADORA: ${empregadora}
 EMPREGADO: ${empregado}
@@ -250,11 +253,9 @@ CPF nº ${documento}
 `;
       } else {
         texto = `
-TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS
 
 CONTRATANTE: ${empregadora}
 REPRESENTANTE LEGAL DO CONTRATADO: ${empregado}
-RAZÃO SOCIAL: ${razaoSocial}
 APARELHOS ENTREGUES: ${equipamentos}
 
 Na qualidade de REPRESENTANTE LEGAL DO CONTRATADO, declaro que:
@@ -288,14 +289,25 @@ CNPJ: ${documento}
         ? `PJ_Termo_de_Responsabilidade_${razaoSocial || empregado}.pdf`
         : `Termo_de_Responsabilidade_${empregado}.pdf`;
 
-      doc.setFontSize(13);
+      // --- Título centralizado em duas linhas ---
+      doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text("TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS", 105, 20, { align: "center" });
 
+      // Divide automaticamente o título em até duas linhas (máx. 160 mm de largura)
+      const titulo = doc.splitTextToSize(
+        "TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS",
+        160
+      );
+
+      // Centraliza o título verticalmente e horizontalmente
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.text(titulo, pageWidth / 2, 25, { align: "center" });
+
+      // --- Corpo do texto ---
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
       const lines = doc.splitTextToSize(texto, 180);
-      doc.text(lines, 15, 30);
+      doc.text(lines, 15, 45);
       doc.save(nomeArquivo);
     }
   </script>
