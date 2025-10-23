@@ -10,6 +10,49 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="Css/register.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    // Sistema de sons para alerts
+    function playSound(type) {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      switch(type) {
+        case 'success':
+          // Som de sucesso - tom ascendente
+          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
+          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1); // E5
+          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2); // G5
+          break;
+        case 'error':
+          // Som de erro - tom descendente
+          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
+          oscillator.frequency.setValueAtTime(392, audioContext.currentTime + 0.1); // G4
+          oscillator.frequency.setValueAtTime(262, audioContext.currentTime + 0.2); // C4
+          break;
+        case 'info':
+          // Som de informação - tom neutro
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.1); // A4
+          break;
+        case 'warning':
+          // Som de aviso - tom oscilante
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+          oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.1); // A5
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.2); // A4
+          break;
+      }
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    }
+  </script>
 </head>
 
 <body>
@@ -110,7 +153,7 @@
       </form>
 
       <div class="auth-links">
-        <p>Já tem uma conta? <a href="login.html">Faça login aqui</a></p>
+        <p>Já tem uma conta? <a href="index.html">Faça login aqui</a></p>
       </div>
     </div>
   </div>
@@ -149,73 +192,85 @@
       
       // Validações
       if (!name) {
+        playSound('error');
         Swal.fire({
           icon: 'error',
           title: 'Erro!',
           text: 'Nome é obrigatório',
-          confirmButtonColor: '#667eea',
           position: 'top-end',
-          toast: true
+          toast: true,
+          showConfirmButton: false,
+          timer: 3000
         });
         return;
       }
 
       if (!email) {
+        playSound('error');
         Swal.fire({
           icon: 'error',
           title: 'Erro!',
           text: 'Email é obrigatório',
-          confirmButtonColor: '#667eea',
           position: 'top-end',
-          toast: true
+          toast: true,
+          showConfirmButton: false,
+          timer: 3000
         });
         return;
       }
 
       if (!selectedSector) {
+        playSound('error');
         Swal.fire({
           icon: 'error',
           title: 'Erro!',
           text: 'Por favor, selecione um setor',
-          confirmButtonColor: '#667eea',
           position: 'top-end',
-          toast: true
+          toast: true,
+          showConfirmButton: false,
+          timer: 3000
         });
         return;
       }
 
       if (!password) {
+        playSound('error');
         Swal.fire({
           icon: 'error',
           title: 'Erro!',
           text: 'Senha é obrigatória',
-          confirmButtonColor: '#667eea',
           position: 'top-end',
-          toast: true
+          toast: true,
+          showConfirmButton: false,
+          timer: 3000
         });
         return;
       }
 
       if (password.length < 6) {
+        playSound('error');
         Swal.fire({
           icon: 'error',
           title: 'Erro!',
           text: 'Senha deve ter pelo menos 6 caracteres',
-          confirmButtonColor: '#667eea',
           position: 'top-end',
-          toast: true
+          toast: true,
+          showConfirmButton: false,
+          timer: 3000
         });
         return;
       }
 
       if (password !== confirmPassword) {
+        playSound('error');
         Swal.fire({
           icon: 'error',
           title: 'Erro!',
           text: 'Senhas não coincidem',
-          confirmButtonColor: '#667eea',
           position: 'top-end',
-          toast: true
+          toast: true,
+          showConfirmButton: false,
+          timer: 3000
         });
         return;
       }
@@ -240,6 +295,7 @@
         await jsonRegisterUser(userData);
 
         // Sucesso
+        playSound('success');
         Swal.fire({
           icon: 'success',
           title: 'Sucesso!',
@@ -250,11 +306,12 @@
           position: 'top-end',
           toast: true
         }).then(() => {
-          window.location.href = 'login.html';
+          window.location.href = 'index.html';
         });
         
       } catch (error) {
         // Erro
+        playSound('error');
         Swal.fire({
           icon: 'error',
           title: 'Erro!',
@@ -273,7 +330,7 @@
     // Verificar se já está logado
     document.addEventListener('DOMContentLoaded', () => {
       if (jsonIsUserLoggedIn()) {
-        window.location.href = 'Pages/index.html';
+        window.location.href = 'Pages/termoresponsabilidade.html';
       }
     });
   </script>

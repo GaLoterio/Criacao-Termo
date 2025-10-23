@@ -138,13 +138,13 @@ O sistema foi publicado utilizando o **GitHub Pages**, permitindo:
 5. **Confirme** e clique em "Criar Conta"
 
 ### **Login**
-1. **Acesse** `login.html` (página raiz)
+1. **Acesse** `index.html` (página raiz)
 2. **Digite** email e senha
 3. **Clique** em "Entrar"
 4. O sistema reconhece automaticamente seu setor do arquivo JSON
 
 ### **Gerando Termos**
-1. Após o login, você será redirecionado para `Pages/index.html`
+1. Após o login, você será redirecionado para `Pages/termoresponsabilidade.html`
 2. **Preencha o formulário** com as informações necessárias
 3. **Valide os dados** automaticamente em tempo real
 4. **Clique em "Gerar PDF"** e aguarde o processamento
@@ -187,8 +187,8 @@ projeto/
 │   ├── imgFundo.jpeg
 │   └── logoOMLT.jpeg
 ├── Pages/
-│   ├── index.html          # Gerador de termos (protegido)
+│   ├── termoresponsabilidade.html  # Gerador de termos (protegido)
 │   └── register.html       # Página de registro
-├── login.html              # Página de login (raiz)
+├── index.html              # Página de login (raiz)
 └── README.md
 ```

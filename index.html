@@ -8,8 +8,51 @@
   <link rel="icon" type="image/jpeg" href="images/logoOMLT.jpeg">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link href="Css/login.css" rel="stylesheet">
+  <link href="Css/index.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    // Sistema de sons para alerts
+    function playSound(type) {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      switch(type) {
+        case 'success':
+          // Som de sucesso - tom ascendente
+          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
+          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1); // E5
+          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2); // G5
+          break;
+        case 'error':
+          // Som de erro - tom descendente
+          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
+          oscillator.frequency.setValueAtTime(392, audioContext.currentTime + 0.1); // G4
+          oscillator.frequency.setValueAtTime(262, audioContext.currentTime + 0.2); // C4
+          break;
+        case 'info':
+          // Som de informação - tom neutro
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.1); // A4
+          break;
+        case 'warning':
+          // Som de aviso - tom oscilante
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+          oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.1); // A5
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.2); // A4
+          break;
+      }
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    }
+  </script>
 </head>
 
 <body>
@@ -49,15 +92,15 @@
           <button type="submit" class="btn-primary" id="loginBtn">
             <i class="fas fa-sign-in-alt"></i> Entrar
           </button>
-        </div>
+            </div>
       </form>
 
       <div class="auth-links">
         <p>Não tem uma conta? <a href="register.html">Registre-se aqui</a></p>
         <p><a href="#" onclick="forgotPassword()">Esqueceu sua senha?</a></p>
-      </div>
-    </div>
-  </div>
+            </div>
+          </div>
+        </div>
 
   <script src="js/permissions.js"></script>
   <script src="js/json-auth.js"></script>
@@ -83,6 +126,7 @@
         
         if (success) {
           // Sucesso
+          playSound('success');
           Swal.fire({
             icon: 'success',
             title: 'Sucesso!',
@@ -93,13 +137,14 @@
             position: 'top-end',
             toast: true
           }).then(() => {
-            window.location.href = 'Pages/index.html';
+            window.location.href = 'Pages/termoresponsabilidade.html';
           });
-        } else {
+      } else {
           throw new Error('Credenciais inválidas');
         }
       } catch (error) {
         // Erro
+        playSound('error');
         Swal.fire({
           icon: 'error',
           title: 'Erro!',
@@ -116,6 +161,7 @@
     });
 
     function forgotPassword() {
+      playSound('info');
       Swal.fire({
         icon: 'info',
         title: 'Recuperação de Senha',
@@ -129,7 +175,7 @@
     // Verificar se já está logado
     document.addEventListener('DOMContentLoaded', () => {
       if (jsonIsUserLoggedIn()) {
-        window.location.href = 'Pages/index.html';
+        window.location.href = 'Pages/termoresponsabilidade.html';
       }
     });
   </script>
