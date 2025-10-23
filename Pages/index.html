@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Termo de Responsabilidade</title>
+  <link rel="icon" type="image/jpeg" href="../images/logoOMLT.jpeg">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="../Css/index.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="../js/permissions.js"></script>
+  <script src="../js/json-auth.js"></script>
+</head>
+
+<body>
+  <button id="toggle-theme">🌙</button>
+
+  <div class="main-container">
+    <div class="container">
+      <div class="header">
+        <!-- User info (será mostrado apenas se logado) -->
+        <div class="user-info" id="userInfo" style="display: none;">
+          <div class="user-details">
+            <div class="user-name" id="userName"></div>
+            <div class="user-sector" id="userSector"></div>
+          </div>
+          <button class="logout-btn" onclick="handleLogout()">
+            <i class="fas fa-sign-out-alt"></i> Sair
+          </button>
+        </div>
+
+        <div class="logo">
+          <img src="../images/logoOMLT.jpeg" alt="Logo OMLT">
+        </div>
+        <h1>Termo de Responsabilidade</h1>
+        <p class="subtitle">Geração automática de documentos de entrega de equipamentos</p>
+      </div>
+
+      <form>
+        <div class="form-section">
+          <div class="form-group">
+            <label for="empregadora">
+              <i class="fas fa-building"></i> Empregadora / Contratante
+            </label>
+            <div class="input-wrapper">
+              <input id="empregadora" type="text" placeholder="Ex: CCXP ou Omelete" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="empregado">
+              <i class="fas fa-user"></i> Nome do colaborador / responsável legal
+            </label>
+            <div class="input-wrapper">
+              <input id="empregado" type="text" placeholder="Ex: João Rafael" required>
+            </div>
+          </div>
+
+          <div class="form-group" id="razaoSocialField">
+            <label for="razaoSocial">
+              <i class="fas fa-industry"></i> Razão Social (para CNPJ)
+            </label>
+            <div class="input-wrapper">
+              <input id="razaoSocial" type="text" placeholder="Ex: Nome da empresa LTDA">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="documento">
+              <i class="fas fa-id-card"></i> CPF ou CNPJ
+            </label>
+            <div class="input-wrapper">
+              <input id="documento" type="text" placeholder="Ex: 000.000.000-00 ou 00.000.000/000-00"
+                oninput="verificarDocumento()" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="equipamentos">
+              <i class="fas fa-laptop"></i> Equipamentos entregues
+            </label>
+            <div class="input-wrapper">
+              <textarea id="equipamentos" placeholder="Ex: Notebook O&CO000123" required></textarea>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="cidade">
+              <i class="fas fa-map-marker-alt"></i> Cidade
+            </label>
+            <div class="input-wrapper">
+              <input id="cidade" type="text" value="São Paulo" required>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" onclick="gerarPDF()">
+          <i class="fas fa-file-pdf"></i> Gerar PDF
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Auth Overlay (será mostrado se não estiver logado) -->
+  <div class="auth-overlay" id="authOverlay" style="display: none;">
+    <div class="auth-modal">
+      <h2>🔐 Acesso Restrito</h2>
+      <p>Você precisa estar logado para acessar o sistema de geração de termos.</p>
+      <div class="auth-buttons">
+        <a href="../login.html" class="auth-btn primary">
+          <i class="fas fa-sign-in-alt"></i> Fazer Login
+        </a>
+        <a href="../register.html" class="auth-btn secondary">
+          <i class="fas fa-user-plus"></i> Criar Conta
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Access Denied Overlay (será mostrado se usuário não tem permissão) -->
+  <div class="auth-overlay" id="accessDeniedOverlay" style="display: none;">
+    <div class="auth-modal">
+      <h2>🚫 Acesso Negado</h2>
+      <p>Seu setor não tem permissão para acessar o sistema de geração de termos.</p>
+      <p><strong>Apenas o setor de TI tem acesso a esta funcionalidade.</strong></p>
+      <div class="auth-buttons">
+        <button onclick="handleLogout()" class="auth-btn primary">
+          <i class="fas fa-sign-out-alt"></i> Sair
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    // --- Sistema de Autenticação --- Biel Todas as paginas futuras precisa ter esse codigo
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuthentication();
+    });
+
+    function checkAuthentication() {
+      if (jsonIsUserLoggedIn()) {
+
+        // Verificar se o usuário tem permissão para acessar os termos
+        if (jsonHasPermission('gerar_termos')) { // essa linha define o nome da distribuição que sera colocada nas permissções do permissions.ja
+          showUserInterface();
+          updateUserInfo();
+        } else {
+          showAccessDenied();
+        }
+      } else {
+        // Usuário não logado - mostrar overlay de autenticação
+        showAuthOverlay();
+      }
+    } // Fim
+
+    function showUserInterface() {
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('userInfo').style.display = 'flex';
+    }
+
+    function showAuthOverlay() {
+      document.getElementById('authOverlay').style.display = 'flex';
+      document.getElementById('userInfo').style.display = 'none';
+    }
+
+    function showAccessDenied() {
+      document.getElementById('accessDeniedOverlay').style.display = 'flex';
+      document.getElementById('userInfo').style.display = 'flex';
+      updateUserInfo();
+    }
+
+    function updateUserInfo() {
+      const currentUser = jsonGetCurrentUser();
+      if (currentUser) {
+        document.getElementById('userName').textContent = currentUser.profile.name;
+        document.getElementById('userSector').textContent = currentUser.sector;
+        
+        // Mostrar permissões do usuário (para debug)
+        const permissions = jsonGetUserPermissions();
+        const sectorInfo = jsonGetSectorInfo();
+        console.log('Usuário:', currentUser.profile.name);
+        console.log('Setor:', sectorInfo?.name || currentUser.sector);
+        console.log('Permissões:', permissions);
+      }
+    }
+
+    function handleLogout() {
+      Swal.fire({
+        title: 'Sair do Sistema',
+        text: 'Tem certeza que deseja sair?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#667eea',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sim, sair',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Faz logout
+          jsonLogoutUser();
+          
+          // Redireciona para a página de login
+          window.location.href = '../login.html';
+        }
+      });
+    }
+
+    // --- Alternância manual de tema ---
+    const toggleBtn = document.getElementById("toggle-theme");
+    toggleBtn.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      toggleBtn.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+      localStorage.setItem("tema", document.body.classList.contains("dark-mode") ? "dark" : "light");
+      
+      // Animação do botão
+      toggleBtn.style.transform = "scale(1.2) rotate(180deg)";
+      setTimeout(() => {
+        toggleBtn.style.transform = "scale(1) rotate(0deg)";
+      }, 300);
+    });
+
+    // Mantém o modo entre sessões
+    if (localStorage.getItem("tema") === "dark") {
+      document.body.classList.add("dark-mode");
+      toggleBtn.textContent = "☀️";
+    }
+
+    // Animação de entrada dos elementos
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    // Observar elementos do formulário
+    document.addEventListener('DOMContentLoaded', () => {
+      const formGroups = document.querySelectorAll('.form-group');
+      formGroups.forEach(group => {
+        observer.observe(group);
+      });
+    });
+
+    function verificarDocumento() {
+      const documento = document.getElementById("documento").value.replace(/\D/g, "");
+      const campoRazao = document.getElementById("razaoSocialField");
+      
+      if (documento.length > 11) {
+        campoRazao.classList.add("show");
+      } else {
+        campoRazao.classList.remove("show");
+      }
+    }
+
+    // Validação em tempo real
+    function validarFormulario() {
+      const campos = ['empregadora', 'empregado', 'documento', 'equipamentos', 'cidade'];
+      let valido = true;
+      
+      campos.forEach(campo => {
+        const input = document.getElementById(campo);
+        if (!input.value.trim()) {
+          input.style.borderColor = '#e53e3e';
+          input.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.1)';
+          valido = false;
+        } else {
+          input.style.borderColor = '#e2e8f0';
+          input.style.boxShadow = 'none';
+        }
+      });
+      
+      return valido;
+    }
+
+    // Adicionar validação em tempo real
+    document.addEventListener('DOMContentLoaded', () => {
+      const inputs = document.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        input.addEventListener('blur', validarFormulario);
+        input.addEventListener('input', () => {
+          if (input.value.trim()) {
+            input.style.borderColor = '#e2e8f0';
+            input.style.boxShadow = 'none';
+          }
+        });
+      });
+    });
+
+    function gerarPDF() {
+      // Validação antes de gerar
+      if (!validarFormulario()) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Erro!',
+          text: 'Por favor, preencha todos os campos obrigatórios',
+          confirmButtonColor: '#667eea',
+          position: 'top-end',
+          toast: true
+        });
+        return;
+      }
+
+      // Estado de loading
+      const btn = document.querySelector('.btn-primary');
+      btn.classList.add('loading');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+      btn.disabled = true;
+      // Simular delay para mostrar loading
+      setTimeout(() => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const empregadora = document.getElementById("empregadora").value;
+        const empregado = document.getElementById("empregado").value;
+        const razaoSocial = document.getElementById("razaoSocial").value;
+        const documento = document.getElementById("documento").value;
+        const equipamentos = document.getElementById("equipamentos").value;
+        const cidade = document.getElementById("cidade").value;
+
+        const hoje = new Date();
+        const dataFormatada = hoje.toLocaleDateString("pt-BR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+        const data = `${cidade}, ${dataFormatada}.`;
+
+        const isPJ = documento.replace(/\D/g, '').length > 11;
+
+        let texto = "";
+
+        if (!isPJ) {
+          texto = `
+
+EMPREGADORA: ${empregadora}
+EMPREGADO: ${empregado}
+APARELHOS ENTREGUES: ${equipamentos}
+
+Na qualidade de EMPREGADO e da EMPREGADORA, declaro que:
+
+a) recebi nesta data o(s) equipamento(s) acima descrito(s) e respectivos acessórios;
+
+b) o(s) equipamento(s) acima descrito(s) e respectivos acessórios permanecerão sob minha posse e guarda e serão utilizados com o zelo devido;
+
+c) o(s) equipamento(s) acima descrito(s) e respectivos acessórios são ferramenta exclusivamente destinada ao uso no e para o trabalho, sendo vedada a sua utilização para outros fins;
+
+d) o(s) equipamento(s) acima descrito(s) e respectivos acessórios não são benefício, complemento salarial, salário indireto, salário in natura ou qualquer espécie de contraprestação pelo trabalho realizado;
+
+e) reconheço o direito da EMPREGADORA, a qualquer tempo e segundo seu exclusivo critério, exigir a devolução do(s) equipamento(s) acima descrito(s) e respectivos acessórios, independentemente de pré-aviso ou comunicação escrita;
+
+f) estou ciente de que os gastos decorrentes da utilização do(s) equipamento(s) acima descrito(s) para fins pessoais e particulares, uso indevido ou avarias serão de minha inteira responsabilidade.
+
+Na eventualidade de cessação do meu vínculo empregatício com a EMPREGADORA, independentemente da causa ou motivo, obrigo-me a devolver, no ato da dispensa, o(s) equipamento(s) acima descrito(s) e respectivos acessórios em perfeito estado de conservação e funcionamento.
+
+Assumo o compromisso de utilizar o(s) equipamento(s) acima descrito(s) de acordo com as recomendações do fabricante e orientação da EMPREGADORA, bem como de comunicar imediatamente a esta a ocorrência de extravio, defeito ou avaria que impeça o seu perfeito funcionamento.
+
+Nos termos do artigo 462 da CLT, fica a EMPREGADORA autorizada a descontar do meu salário e/ou de minhas verbas rescisórias os valores devidos em razão de uso inadequado, perda ou avaria, por dolo ou culpa, do(s) equipamento(s) acima descrito(s), bem como eventuais gastos com o seu uso pessoal e particular, independentemente de pré-aviso ou comunicação escrita.
+
+${data}
+
+_____________________________________
+${empregado}
+CPF nº ${documento}
+`;
+        } else {
+          texto = `
+
+CONTRATANTE: ${empregadora}
+REPRESENTANTE LEGAL DO CONTRATADO: ${empregado}
+APARELHOS ENTREGUES: ${equipamentos}
+
+Na qualidade de REPRESENTANTE LEGAL DO CONTRATADO, declaro que:
+
+a) recebi nesta data o(s) equipamento(s) acima descrito(s) e respectivos acessórios;
+
+b) o(s) equipamento(s) acima descrito(s) e respectivos acessórios permanecerão sob minha posse e guarda e serão utilizados com o zelo devido;
+
+c) o(s) equipamento(s) acima descrito(s) e respectivos acessórios são ferramenta exclusivamente destinada ao uso para a prestação de serviços contratada, sendo vedada a sua utilização para outros fins;
+
+d) reconheço o direito da CONTRATANTE, a qualquer tempo e segundo seu exclusivo critério, exigir a devolução do(s) equipamento(s) acima descrito(s) e respectivos acessórios, independentemente de pré-aviso ou comunicação escrita;
+
+e) estou ciente de que os gastos decorrentes da utilização do(s) equipamento(s) acima descrito(s) para fins pessoais e particulares, uso indevido ou avarias serão de minha inteira responsabilidade.
+
+Na eventualidade de cessação do Contrato de Prestação de Serviços firmado, independentemente da causa ou motivo, obrigo-me a devolver, no ato da rescisão, o(s) equipamento(s) acima descrito(s) e respectivos acessórios em perfeito estado de conservação e funcionamento.
+
+Assumo o compromisso de utilizar o(s) equipamento(s) acima descrito(s) de acordo com as recomendações do fabricante e orientação da CONTRATANTE, bem como de comunicar imediatamente a esta a ocorrência de extravio, defeito ou avaria que impeça o seu perfeito funcionamento.
+
+Nos termos dos artigos 186 e 927 do Código Civil, fica a CONTRATANTE autorizada a descontar dos honorários previstos no Contrato de Prestação de Serviços os valores devidos em razão de uso inadequado, perda ou avaria, por dolo ou culpa, do(s) equipamento(s) acima descrito(s), bem como eventuais gastos com o seu uso pessoal e particular, independentemente de pré-aviso ou comunicação escrita.
+
+${data}
+
+_____________________________________
+${empregado}
+${razaoSocial}
+CNPJ: ${documento}
+`;
+        }
+
+        const nomeArquivo = isPJ
+          ? `PJ_Termo_de_Responsabilidade_${razaoSocial || empregado}.pdf`
+          : `Termo_de_Responsabilidade_${empregado}.pdf`;
+
+        // --- Título centralizado em duas linhas ---
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+
+        // Divide automaticamente o título em até duas linhas (máx. 160 mm de largura)
+        const titulo = doc.splitTextToSize(
+          "TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS",
+          160
+        );
+
+        // Centraliza o título verticalmente e horizontalmente
+        const pageWidth = doc.internal.pageSize.getWidth();
+        doc.text(titulo, pageWidth / 2, 25, { align: "center" });
+
+        // --- Corpo do texto ---
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        const lines = doc.splitTextToSize(texto, 180);
+        doc.text(lines, 15, 45);
+        doc.save(nomeArquivo);
+
+        // Salvar termo no histórico do usuário
+        if (jsonIsUserLoggedIn()) {
+          const currentUser = jsonGetCurrentUser();
+          const termoData = {
+            empregadora,
+            empregado,
+            razaoSocial,
+            documento,
+            equipamentos,
+            cidade,
+            data: data,
+            tipo: isPJ ? 'PJ' : 'PF',
+            nomeArquivo
+          };
+          
+          jsonAddTermoToUser(currentUser.email, termoData);
+        }
+
+        // Restaurar botão após sucesso
+        btn.classList.remove('loading');
+        btn.innerHTML = '<i class="fas fa-file-pdf"></i> Gerar PDF';
+        btn.disabled = false;
+        
+        // Mostrar sucesso com SweetAlert2
+        Swal.fire({
+          icon: 'success',
+          title: 'Sucesso!',
+          text: 'PDF gerado com sucesso!',
+          confirmButtonColor: '#48bb78',
+          timer: 2000,
+          showConfirmButton: false,
+          position: 'top-end',
+          toast: true
+        });
+      }, 1500);
+    }
+
+    // Adicionar animação de shake
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+
+</html>
