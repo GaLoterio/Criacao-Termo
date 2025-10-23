@@ -232,24 +232,11 @@
     }
 
     function handleLogout() {
-      Swal.fire({
-        title: 'Sair do Sistema',
-        text: 'Tem certeza que deseja sair?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#667eea',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sim, sair',
-        cancelButtonText: 'Cancelar'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // Faz logout
-          jsonLogoutUser();
-          
-          // Redireciona para a página de login
-          window.location.href = '../index.html';
-        }
-      });
+      // Faz logout direto
+      jsonLogoutUser();
+      
+      // Redireciona para a página de login
+      window.location.href = '../index.html';
     }
 
     // --- Alternância manual de tema ---
