@@ -2,55 +2,49 @@
 <html lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Sistema de Termos</title>
-  <link rel="icon" type="image/jpeg" href="images/logoOMLT.jpeg">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link href="Css/index.css" rel="stylesheet">
+  <link rel="icon" type="image/jpeg" href="images/logoOMLT.jpeg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link href="Css/index.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Supabase principal -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <!-- Fallback local -->
   <script>
-    // Sistema de sons para alerts
+    if (!window.supabase) {
+      console.warn("⚠️ CDN do Supabase falhou, carregando fallback local...");
+      const script = document.createElement("script");
+      script.src = "js/libs/supabase.min.js";
+      document.head.appendChild(script);
+    }
+  </script>
+
+  <!-- Seu arquivo de autenticação -->
+  <script src="js/supabase-auth.js"></script>
+
+  <!-- Sons dos alerts -->
+  <script>
     function playSound(type) {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      switch(type) {
-        case 'success':
-          // Som de sucesso - tom ascendente
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1); // E5
-          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2); // G5
-          break;
-        case 'error':
-          // Som de erro - tom descendente
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-          oscillator.frequency.setValueAtTime(392, audioContext.currentTime + 0.1); // G4
-          oscillator.frequency.setValueAtTime(262, audioContext.currentTime + 0.2); // C4
-          break;
-        case 'info':
-          // Som de informação - tom neutro
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.1); // A4
-          break;
-        case 'warning':
-          // Som de aviso - tom oscilante
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-          oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.1); // A5
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.2); // A4
-          break;
-      }
-      
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const tones = {
+        success: [523, 659, 784],
+        error: [523, 392, 262],
+        info: [440, 440],
+        warning: [440, 880, 440]
+      }[type];
+      tones.forEach((f, i) => osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.1));
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
     }
   </script>
 </head>
@@ -60,7 +54,7 @@
     <div class="container">
       <div class="header">
         <div class="logo">
-          <img src="images/logoOMLT.jpeg" alt="Logo OMLT">
+          <img src="images/logoOMLT.jpeg" alt="Logo OMLT" />
         </div>
         <h1>Login</h1>
         <p class="subtitle">Acesse o sistema de geração de termos</p>
@@ -68,115 +62,87 @@
 
       <form id="loginForm">
         <div class="form-section">
-          <!-- Email -->
           <div class="form-group">
-            <label for="email">
-              <i class="fas fa-envelope"></i> Email
-            </label>
+            <label for="email"><i class="fas fa-envelope"></i> Email</label>
             <div class="input-wrapper">
-              <input id="email" type="email" placeholder="seu@email.com" required>
+              <input id="email" type="email" placeholder="seu@email.com" required />
             </div>
           </div>
 
-          <!-- Senha -->
           <div class="form-group">
-            <label for="password">
-              <i class="fas fa-lock"></i> Senha
-            </label>
+            <label for="password"><i class="fas fa-lock"></i> Senha</label>
             <div class="input-wrapper">
-              <input id="password" type="password" placeholder="Sua senha" required>
+              <input id="password" type="password" placeholder="Sua senha" required />
             </div>
           </div>
 
-          <!-- Botão de login -->
           <button type="submit" class="btn-primary" id="loginBtn">
             <i class="fas fa-sign-in-alt"></i> Entrar
           </button>
-            </div>
+        </div>
       </form>
 
       <div class="auth-links">
         <p>Não tem uma conta? <a href="Pages/register.html">Registre-se aqui</a></p>
         <p><a href="#" onclick="forgotPassword()">Esqueceu sua senha?</a></p>
-            </div>
-          </div>
-        </div>
+      </div>
+    </div>
+  </div>
 
-  <script src="js/permissions.js"></script>0
-  <script src="js/json-auth.js"></script>
+  <!-- Funções específicas da página -->
   <script>
-    // Formulário de login
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    // Login
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const loginBtn = document.getElementById('loginBtn');
-      
-      // Estado de loading
-      loginBtn.classList.add('loading');
-      loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
-      loginBtn.disabled = true;
-      
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const btn = document.getElementById("loginBtn");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+
       try {
-        // Simular delay para UX
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const success = await jsonLoginUser(email, password);
-        
-        if (success) {
-          // Sucesso
-          playSound('success');
-          Swal.fire({
-            icon: 'success',
-            title: 'Sucesso!',
-            text: 'Login realizado com sucesso!',
-            confirmButtonColor: '#48bb78',
-            timer: 1500,
-            showConfirmButton: false,
-            position: 'top-end',
-            toast: true
-          }).then(() => {
-            window.location.href = 'Pages/termoresponsabilidade.html';
-          });
-      } else {
-          throw new Error('Credenciais inválidas');
-        }
-      } catch (error) {
-        // Erro
-        playSound('error');
+        const result = await window.authSupabase.signInWithEmail(email, password);
+        playSound("success");
         Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: error.message,
-          position: 'top-end',
+          icon: "success",
+          title: "Sucesso!",
+          text: "Login realizado com sucesso!",
           toast: true,
-          showConfirmButton: false,
-          timer: 3000
+          position: "top-end",
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => (window.location.href = "Pages/termoresponsabilidade.html"));
+      } catch (err) {
+        playSound("error");
+        Swal.fire({
+          icon: "error",
+          title: "Erro!",
+          text: err.message,
+          toast: true,
+          position: "top-end",
+          timer: 3000,
+          showConfirmButton: false
         });
-        loginBtn.classList.remove('loading');
-        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
-        loginBtn.disabled = false;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
       }
     });
 
-    function forgotPassword() {
-      playSound('info');
-      Swal.fire({
-        icon: 'info',
-        title: 'Recuperação de Senha',
-        text: 'Funcionalidade de recuperação de senha será implementada em breve!',
-        confirmButtonColor: '#667eea',
-        position: 'top-end',
-        toast: true
-      });
-    }
-
-    // Verificar se já está logado
-    document.addEventListener('DOMContentLoaded', () => {
-      if (jsonIsUserLoggedIn()) {
-        window.location.href = 'Pages/termoresponsabilidade.html';
-      }
+    // Garantia de inicialização antes do uso
+    document.addEventListener("DOMContentLoaded", async () => {
+      const waitForAuth = async () => {
+        if (window.authSupabase && window.authSupabase.currentUser) {
+          const user = await window.authSupabase.currentUser();
+          if (user && user.email) {
+            console.log("Usuário logado detectado:", user.email);
+            window.location.href = "Pages/termoresponsabilidade.html";
+          }
+        } else {
+          setTimeout(waitForAuth, 400);
+        }
+      };
+      waitForAuth();
     });
   </script>
 </body>

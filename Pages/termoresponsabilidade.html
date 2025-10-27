@@ -11,51 +11,32 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="../Css/termoresponsabilidade.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="../js/supabase-auth.js"></script>
+
   <script>
     // Sistema de sons para alerts
     function playSound(type) {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
-      switch(type) {
-        case 'success':
-          // Som de sucesso - tom ascendente
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1); // E5
-          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2); // G5
-          break;
-        case 'error':
-          // Som de erro - tom descendente
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-          oscillator.frequency.setValueAtTime(392, audioContext.currentTime + 0.1); // G4
-          oscillator.frequency.setValueAtTime(262, audioContext.currentTime + 0.2); // C4
-          break;
-        case 'info':
-          // Som de informação - tom neutro
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.1); // A4
-          break;
-        case 'warning':
-          // Som de aviso - tom oscilante
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-          oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.1); // A5
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.2); // A4
-          break;
-      }
-      
+      const tones = {
+        success: [523, 659, 784],
+        error: [523, 392, 262],
+        info: [440, 440],
+        warning: [440, 880, 440]
+      }[type];
+      tones.forEach((f, i) => oscillator.frequency.setValueAtTime(f, audioContext.currentTime + i * 0.1));
       gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      
-      oscillator.start(audioContext.currentTime);
+      oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.3);
     }
   </script>
-  <script src="../js/permissions.js"></script>
-  <script src="../js/json-auth.js"></script>
 </head>
 
 <body>
@@ -64,13 +45,12 @@
   <div class="main-container">
     <div class="container">
       <div class="header">
-        <!-- User info (será mostrado apenas se logado) -->
         <div class="user-info" id="userInfo" style="display: none;">
           <div class="user-details">
             <div class="user-name" id="userName"></div>
             <div class="user-sector" id="userSector"></div>
           </div>
-          <button class="logout-btn" onclick="handleLogout()">
+          <button class="logout-btn" id="logoutBtn">
             <i class="fas fa-sign-out-alt"></i> Sair
           </button>
         </div>
@@ -147,97 +127,45 @@
     </div>
   </div>
 
-  <!-- Auth Overlay (será mostrado se não estiver logado) -->
-  <div class="auth-overlay" id="authOverlay" style="display: none;">
-    <div class="auth-modal">
-      <h2>🔐 Acesso Restrito</h2>
-      <p>Você precisa estar logado para acessar o sistema de geração de termos.</p>
-      <div class="auth-buttons">
-        <a href="../index.html" class="auth-btn primary">
-          <i class="fas fa-sign-in-alt"></i> Fazer Login
-        </a>
-        <a href="../register.html" class="auth-btn secondary">
-          <i class="fas fa-user-plus"></i> Criar Conta
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Access Denied Overlay (será mostrado se usuário não tem permissão) -->
-  <div class="auth-overlay" id="accessDeniedOverlay" style="display: none;">
-    <div class="auth-modal">
-      <h2>🚫 Acesso Negado</h2>
-      <p>Seu setor não tem permissão para acessar o sistema de geração de termos.</p>
-      <p><strong>Apenas o setor de TI tem acesso a esta funcionalidade.</strong></p>
-      <div class="auth-buttons">
-        <button onclick="handleLogout()" class="auth-btn primary">
-          <i class="fas fa-sign-out-alt"></i> Sair
-        </button>
-      </div>
+  <!-- 🔒 Modal de acesso restrito -->
+  <div class="modal" id="authModal" style="display:none;">
+    <h2><i class="fas fa-lock"></i> Acesso Restrito</h2>
+    <p>Você precisa estar logado para acessar o sistema de geração de termos.</p>
+    <div class="auth-buttons">
+      <a href="../index.html" class="btn btn-login">
+        <i class="fas fa-sign-in-alt"></i> Fazer Login
+      </a>
+      <a href="../Pages/register.html" class="btn btn-register">
+        <i class="fas fa-user-plus"></i> Criar Conta
+      </a>
     </div>
   </div>
 
   <script>
+    // --- Controle de autenticação Supabase ---
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (!window.authSupabase) {
+        console.error("❌ Supabase não inicializado.");
+        return;
+      }
 
-    // --- Sistema de Autenticação --- Biel Todas as paginas futuras precisa ter esse codigo
-    document.addEventListener('DOMContentLoaded', () => {
-      checkAuthentication();
-    });
+      const user = await window.authSupabase.currentUser();
 
-    function checkAuthentication() {
-      if (jsonIsUserLoggedIn()) {
-
-        // Verificar se o usuário tem permissão para acessar os termos
-        if (jsonHasPermission('gerar_termos')) { // essa linha define o nome da distribuição que sera colocada nas permissções do permissions.ja
-          showUserInterface();
-          updateUserInfo();
-        } else {
-          showAccessDenied();
-        }
+      if (!user) {
+        // Exibe modal se não estiver logado
+        document.getElementById("authModal").style.display = "flex";
+        document.querySelector(".main-container").style.filter = "blur(5px)";
       } else {
-        // Usuário não logado - mostrar overlay de autenticação
-        showAuthOverlay();
+        document.getElementById("userInfo").style.display = "flex";
+        document.getElementById("userName").textContent = user.email.split("@")[0];
+        document.getElementById("userSector").textContent = "TI"; // pode futuramente puxar do perfil
       }
-    } // Fim
 
-    function showUserInterface() {
-      document.getElementById('authOverlay').style.display = 'none';
-      document.getElementById('userInfo').style.display = 'flex';
-    }
-
-    function showAuthOverlay() {
-      document.getElementById('authOverlay').style.display = 'flex';
-      document.getElementById('userInfo').style.display = 'none';
-    }
-
-    function showAccessDenied() {
-      document.getElementById('accessDeniedOverlay').style.display = 'flex';
-      document.getElementById('userInfo').style.display = 'flex';
-      updateUserInfo();
-    }
-
-    function updateUserInfo() {
-      const currentUser = jsonGetCurrentUser();
-      if (currentUser) {
-        document.getElementById('userName').textContent = currentUser.profile.name;
-        document.getElementById('userSector').textContent = currentUser.sector;
-        
-        // Mostrar permissões do usuário (para debug)
-        const permissions = jsonGetUserPermissions();
-        const sectorInfo = jsonGetSectorInfo();
-        console.log('Usuário:', currentUser.profile.name);
-        console.log('Setor:', sectorInfo?.name || currentUser.sector);
-        console.log('Permissões:', permissions);
-      }
-    }
-
-    function handleLogout() {
-      // Faz logout direto
-      jsonLogoutUser();
-      
-      // Redireciona para a página de login
-      window.location.href = '../index.html';
-    }
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        await window.authSupabase.signOut();
+        window.location.href = "../index.html";
+      });
+    });
 
     // --- Alternância manual de tema ---
     const toggleBtn = document.getElementById("toggle-theme");
@@ -245,26 +173,16 @@
       document.body.classList.toggle("dark-mode");
       toggleBtn.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
       localStorage.setItem("tema", document.body.classList.contains("dark-mode") ? "dark" : "light");
-      
-      // Animação do botão
       toggleBtn.style.transform = "scale(1.2) rotate(180deg)";
-      setTimeout(() => {
-        toggleBtn.style.transform = "scale(1) rotate(0deg)";
-      }, 300);
+      setTimeout(() => toggleBtn.style.transform = "scale(1) rotate(0deg)", 300);
     });
 
-    // Mantém o modo entre sessões
     if (localStorage.getItem("tema") === "dark") {
       document.body.classList.add("dark-mode");
       toggleBtn.textContent = "☀️";
     }
 
-    // Animação de entrada dos elementos
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-
+    // --- Efeitos visuais e validações ---
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -272,66 +190,50 @@
           entry.target.style.transform = 'translateY(0)';
         }
       });
-    }, observerOptions);
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
-    // Observar elementos do formulário
     document.addEventListener('DOMContentLoaded', () => {
-      const formGroups = document.querySelectorAll('.form-group');
-      formGroups.forEach(group => {
-        observer.observe(group);
-      });
+      document.querySelectorAll('.form-group').forEach(group => observer.observe(group));
     });
 
     function verificarDocumento() {
       const documento = document.getElementById("documento").value.replace(/\D/g, "");
       const campoRazao = document.getElementById("razaoSocialField");
-      
-      if (documento.length > 11) {
-        campoRazao.classList.add("show");
-      } else {
-        campoRazao.classList.remove("show");
-      }
+      campoRazao.classList.toggle("show", documento.length > 11);
     }
 
-    // Validação em tempo real
     function validarFormulario() {
       const campos = ['empregadora', 'empregado', 'documento', 'equipamentos', 'cidade'];
       let valido = true;
-      
       campos.forEach(campo => {
         const input = document.getElementById(campo);
         if (!input.value.trim()) {
           input.style.borderColor = '#e53e3e';
-          input.style.boxShadow = '0 0 0 3px rgba(229, 62, 62, 0.1)';
+          input.style.boxShadow = '0 0 0 3px rgba(229,62,62,0.1)';
           valido = false;
         } else {
           input.style.borderColor = '#e2e8f0';
           input.style.boxShadow = 'none';
         }
       });
-      
       return valido;
     }
 
-    // Adicionar validação em tempo real
-    document.addEventListener('DOMContentLoaded', () => {
-      const inputs = document.querySelectorAll('input, textarea');
-      inputs.forEach(input => {
-        input.addEventListener('blur', validarFormulario);
-        input.addEventListener('input', () => {
-          if (input.value.trim()) {
-            input.style.borderColor = '#e2e8f0';
-            input.style.boxShadow = 'none';
-          }
-        });
+    document.querySelectorAll('input, textarea').forEach(input => {
+      input.addEventListener('blur', validarFormulario);
+      input.addEventListener('input', () => {
+        if (input.value.trim()) {
+          input.style.borderColor = '#e2e8f0';
+          input.style.boxShadow = 'none';
+        }
       });
     });
 
+    // --- Geração do PDF ---
     function gerarPDF() {
-      // Validação antes de gerar
       if (!validarFormulario()) {
         playSound('error');
-        Swal.fire({
+        return Swal.fire({
           icon: 'error',
           title: 'Erro!',
           text: 'Por favor, preencha todos os campos obrigatórios',
@@ -339,19 +241,16 @@
           position: 'top-end',
           toast: true
         });
-        return;
       }
 
-      // Estado de loading
       const btn = document.querySelector('.btn-primary');
       btn.classList.add('loading');
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
       btn.disabled = true;
-      // Simular delay para mostrar loading
+
       setTimeout(() => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-
         const empregadora = document.getElementById("empregadora").value;
         const empregado = document.getElementById("empregado").value;
         const razaoSocial = document.getElementById("razaoSocial").value;
@@ -360,11 +259,7 @@
         const cidade = document.getElementById("cidade").value;
 
         const hoje = new Date();
-        const dataFormatada = hoje.toLocaleDateString("pt-BR", {
-          day: "numeric",
-          month: "long",
-          year: "numeric"
-        });
+        const dataFormatada = hoje.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
         const data = `${cidade}, ${dataFormatada}.`;
 
         const isPJ = documento.replace(/\D/g, '').length > 11;
@@ -442,51 +337,24 @@ CNPJ: ${documento}
           ? `PJ_Termo_de_Responsabilidade_${razaoSocial || empregado}.pdf`
           : `Termo_de_Responsabilidade_${empregado}.pdf`;
 
-        // --- Título centralizado em duas linhas ---
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-
-        // Divide automaticamente o título em até duas linhas (máx. 160 mm de largura)
         const titulo = doc.splitTextToSize(
-          "TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS",
-          160
+          "TERMO DE RESPONSABILIDADE E RECIBO DE ENTREGA DE EQUIPAMENTOS E ACESSÓRIOS", 160
         );
-
-        // Centraliza o título verticalmente e horizontalmente
         const pageWidth = doc.internal.pageSize.getWidth();
         doc.text(titulo, pageWidth / 2, 25, { align: "center" });
 
-        // --- Corpo do texto ---
         doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
         const lines = doc.splitTextToSize(texto, 180);
         doc.text(lines, 15, 45);
         doc.save(nomeArquivo);
 
-        // Salvar termo no histórico do usuário
-        if (jsonIsUserLoggedIn()) {
-          const currentUser = jsonGetCurrentUser();
-          const termoData = {
-            empregadora,
-            empregado,
-            razaoSocial,
-            documento,
-            equipamentos,
-            cidade,
-            data: data,
-            tipo: isPJ ? 'PJ' : 'PF',
-            nomeArquivo
-          };
-          
-          jsonAddTermoToUser(currentUser.email, termoData);
-        }
-
-        // Restaurar botão após sucesso
         btn.classList.remove('loading');
         btn.innerHTML = '<i class="fas fa-file-pdf"></i> Gerar PDF';
         btn.disabled = false;
-        
-        // Mostrar sucesso com SweetAlert2
+
         playSound('success');
         Swal.fire({
           icon: 'success',
@@ -500,17 +368,6 @@ CNPJ: ${documento}
         });
       }, 1500);
     }
-
-    // Adicionar animação de shake
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-        20%, 40%, 60%, 80% { transform: translateX(5px); }
-      }
-    `;
-    document.head.appendChild(style);
   </script>
 </body>
 

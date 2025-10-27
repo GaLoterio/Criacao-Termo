@@ -2,57 +2,89 @@
 <html lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Registro - Sistema de Termos</title>
-  <link rel="icon" type="image/jpeg" href="../images/logoOMLT.jpeg">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link href="../Css/register.css" rel="stylesheet">
+  <link rel="icon" type="image/jpeg" href="../images/logoOMLT.jpeg" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link href="../Css/register.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Supabase principal -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <!-- Fallback local -->
   <script>
-    // Sistema de sons para alerts
-    function playSound(type) {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      switch(type) {
-        case 'success':
-          // Som de sucesso - tom ascendente
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1); // E5
-          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2); // G5
-          break;
-        case 'error':
-          // Som de erro - tom descendente
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
-          oscillator.frequency.setValueAtTime(392, audioContext.currentTime + 0.1); // G4
-          oscillator.frequency.setValueAtTime(262, audioContext.currentTime + 0.2); // C4
-          break;
-        case 'info':
-          // Som de informação - tom neutro
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.1); // A4
-          break;
-        case 'warning':
-          // Som de aviso - tom oscilante
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-          oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.1); // A5
-          oscillator.frequency.setValueAtTime(440, audioContext.currentTime + 0.2); // A4
-          break;
-      }
-      
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
+    if (!window.supabase) {
+      console.warn("⚠️ CDN do Supabase falhou, carregando fallback local...");
+      const script = document.createElement("script");
+      script.src = "../js/libs/supabase.min.js";
+      document.head.appendChild(script);
     }
   </script>
+
+  <!-- Script de autenticação -->
+  <script src="../js/supabase-auth.js"></script>
+
+  <!-- Sons dos alerts -->
+  <script>
+    function playSound(type) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const tones = {
+        success: [523, 659, 784],
+        error: [523, 392, 262],
+        info: [440, 440],
+        warning: [440, 880, 440]
+      }[type];
+      tones.forEach((f, i) => osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.1));
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    }
+  </script>
+
+  <style>
+    /* 🔹 Ajuste visual para os botões de setor */
+    .sector-btn {
+      border: 2px solid transparent;
+      background-color: #f8f8f8;
+      border-radius: 10px;
+      padding: 10px 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+      width: 48%;
+      margin: 3px 1%;
+    }
+
+    .sector-btn:hover {
+      background-color: #ecebff;
+    }
+
+    .sector-btn.selected {
+      border: 2px solid #6c63ff;
+      background-color: #f0f0ff;
+      color: #6c63ff;
+      font-weight: 600;
+      box-shadow: 0 0 6px rgba(108, 99, 255, 0.3);
+    }
+
+    .sector-options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 
 <body>
@@ -60,7 +92,7 @@
     <div class="container">
       <div class="header">
         <div class="logo">
-          <img src="../images/logoOMLT.jpeg" alt="Logo OMLT">
+          <img src="../images/logoOMLT.jpeg" alt="Logo OMLT" />
         </div>
         <h1>Registro</h1>
         <p class="subtitle">Crie sua conta no sistema</p>
@@ -68,58 +100,31 @@
 
       <form id="registerForm">
         <div class="form-section">
-          <!-- Nome -->
-          <div class="form-group">
-            <label for="name">
-              <i class="fas fa-user"></i> Nome completo
-            </label>
-            <div class="input-wrapper">
-              <input id="name" type="text" placeholder="Seu nome completo" required>
-            </div>
-          </div>
 
           <!-- Email -->
           <div class="form-group">
-            <label for="email">
-              <i class="fas fa-envelope"></i> Email
-            </label>
+            <label for="email"><i class="fas fa-envelope"></i> Email</label>
             <div class="input-wrapper">
-              <input id="email" type="email" placeholder="seu@email.com" required>
+              <input id="email" type="email" placeholder="seu@email.com" required />
             </div>
           </div>
 
-          <!-- Empresa 
-          <div class="form-group">
-            <label for="company">
-              <i class="fas fa-building"></i> Empresa (opcional)
-            </label>
-            <div class="input-wrapper">
-              <input id="company" type="text" placeholder="Nome da empresa">
-            </div>
-          </div> -->
-
           <!-- Seleção de setor -->
           <div class="form-group">
-            <label for="sector">
-              <i class="fas fa-building"></i> Selecione seu setor
-            </label>
+            <label for="sector"><i class="fas fa-building"></i> Selecione seu setor</label>
             <div class="sector-selection">
               <div class="sector-options">
                 <button type="button" class="sector-btn" data-sector="RH">
-                  <i class="fas fa-users"></i>
-                  <span>Recursos Humanos</span>
+                  <i class="fas fa-users"></i> <span>Recursos Humanos</span>
                 </button>
                 <button type="button" class="sector-btn" data-sector="TI">
-                  <i class="fas fa-laptop"></i>
-                  <span>Tecnologia</span>
+                  <i class="fas fa-laptop"></i> <span>Tecnologia</span>
                 </button>
                 <button type="button" class="sector-btn" data-sector="FINANCEIRO">
-                  <i class="fas fa-calculator"></i>
-                  <span>Financeiro</span>
+                  <i class="fas fa-calculator"></i> <span>Financeiro</span>
                 </button>
                 <button type="button" class="sector-btn" data-sector="ADMIN">
-                  <i class="fas fa-crown"></i>
-                  <span>Administração</span>
+                  <i class="fas fa-crown"></i> <span>Administração</span>
                 </button>
               </div>
             </div>
@@ -127,26 +132,22 @@
 
           <!-- Senha -->
           <div class="form-group">
-            <label for="password">
-              <i class="fas fa-lock"></i> Senha
-            </label>
+            <label for="password"><i class="fas fa-lock"></i> Senha</label>
             <div class="input-wrapper">
-              <input id="password" type="password" placeholder="Mínimo 6 caracteres" required>
+              <input id="password" type="password" placeholder="Mínimo 6 caracteres" required />
             </div>
           </div>
 
           <!-- Confirmar senha -->
           <div class="form-group">
-            <label for="confirmPassword">
-              <i class="fas fa-lock"></i> Confirmar senha
-            </label>
+            <label for="confirmPassword"><i class="fas fa-lock"></i> Confirmar senha</label>
             <div class="input-wrapper">
-              <input id="confirmPassword" type="password" placeholder="Digite a senha novamente" required>
+              <input id="confirmPassword" type="password" placeholder="Digite a senha novamente" required />
             </div>
           </div>
 
-          <!-- Botão de registro -->
-          <button type="submit" class="btn-primary" id="registerBtn">
+          <!-- Botão -->
+          <button type="submit" class="btn-primary" id="registerBtn" disabled>
             <i class="fas fa-user-plus"></i> Criar Conta
           </button>
         </div>
@@ -158,182 +159,77 @@
     </div>
   </div>
 
-  <script src="../js/permissions.js"></script>
-  <script src="../js/json-auth.js"></script>
   <script>
-    // Seleção de setor
     let selectedSector = null;
-    const sectorButtons = document.querySelectorAll('.sector-btn');
-    
+    const sectorButtons = document.querySelectorAll(".sector-btn");
+    const registerBtn = document.getElementById("registerBtn");
+
     sectorButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Remove seleção anterior
-        sectorButtons.forEach(b => b.classList.remove('selected'));
-        
-        // Adiciona seleção atual
-        btn.classList.add('selected');
+      btn.addEventListener("click", () => {
+        sectorButtons.forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
         selectedSector = btn.dataset.sector;
-        
-        // Habilita botão de registro
-        document.getElementById('registerBtn').disabled = false;
+        registerBtn.disabled = false;
       });
     });
 
-    // Formulário de registro
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      
-      const name = document.getElementById('name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const company = ''; // Campo removido temporariamente
-      const password = document.getElementById('password').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
-      const registerBtn = document.getElementById('registerBtn');
-      
-      // Validações
-      if (!name) {
-        playSound('error');
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: 'Nome é obrigatório',
-          position: 'top-end',
-          toast: true,
-          showConfirmButton: false,
-          timer: 3000
-        });
-        return;
-      }
-
-      if (!email) {
-        playSound('error');
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: 'Email é obrigatório',
-          position: 'top-end',
-          toast: true,
-          showConfirmButton: false,
-          timer: 3000
-        });
-        return;
-      }
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
 
       if (!selectedSector) {
-        playSound('error');
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: 'Por favor, selecione um setor',
-          position: 'top-end',
-          toast: true,
-          showConfirmButton: false,
-          timer: 3000
-        });
-        return;
-      }
-
-      if (!password) {
-        playSound('error');
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: 'Senha é obrigatória',
-          position: 'top-end',
-          toast: true,
-          showConfirmButton: false,
-          timer: 3000
-        });
-        return;
-      }
-
-      if (password.length < 6) {
-        playSound('error');
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: 'Senha deve ter pelo menos 6 caracteres',
-          position: 'top-end',
-          toast: true,
-          showConfirmButton: false,
-          timer: 3000
-        });
-        return;
+        playSound("warning");
+        return Swal.fire({ icon: "warning", title: "Selecione um setor!", toast: true, timer: 3000, position: "top-end" });
       }
 
       if (password !== confirmPassword) {
-        playSound('error');
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: 'Senhas não coincidem',
-          position: 'top-end',
-          toast: true,
-          showConfirmButton: false,
-          timer: 3000
-        });
-        return;
+        playSound("error");
+        return Swal.fire({ icon: "error", text: "As senhas não coincidem.", toast: true, position: "top-end" });
       }
-      
-      // Estado de loading
-      registerBtn.classList.add('loading');
-      registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
+
       registerBtn.disabled = true;
-      
+      registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
+
       try {
-        // Simular delay para UX
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const userData = {
-          name,
-          email,
-          company,
-          sector: selectedSector,
-          password
-        };
-
-        await jsonRegisterUser(userData);
-
-        // Sucesso
-        playSound('success');
+        await window.authSupabase.signUpWithEmail(email, password);
+        playSound("success");
         Swal.fire({
-          icon: 'success',
-          title: 'Sucesso!',
-          text: 'Conta criada com sucesso!',
-          confirmButtonColor: '#48bb78',
-          timer: 2000,
-          showConfirmButton: false,
-          position: 'top-end',
-          toast: true
-        }).then(() => {
-          window.location.href = '../index.html';
-        });
-        
-      } catch (error) {
-        // Erro
-        playSound('error');
-        Swal.fire({
-          icon: 'error',
-          title: 'Erro!',
-          text: error.message,
-          confirmButtonColor: '#667eea',
-          position: 'top-end',
-          toast: true
-        });
-        registerBtn.classList.remove('loading');
-        registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Criar Conta';
+          icon: "success",
+          title: "Conta criada!",
+          text: "Verifique seu e-mail para confirmar o cadastro.",
+          toast: true,
+          timer: 2500,
+          position: "top-end",
+          showConfirmButton: false
+        }).then(() => window.location.href = "../index.html");
+      } catch (err) {
+        playSound("error");
+        Swal.fire({ icon: "error", title: "Erro!", text: err.message, toast: true, timer: 4000, position: "top-end" });
+      } finally {
         registerBtn.disabled = false;
+        registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Criar Conta';
       }
     });
 
-
-    // Verificar se já está logado
-    document.addEventListener('DOMContentLoaded', () => {
-      if (jsonIsUserLoggedIn()) {
-        window.location.href = 'termoresponsabilidade.html';
-      }
+    // ✅ Correção aqui: só redireciona se o usuário REALMENTE estiver logado
+    document.addEventListener("DOMContentLoaded", async () => {
+      const waitForAuth = async () => {
+        if (window.authSupabase && window.authSupabase.currentUser) {
+          const user = await window.authSupabase.currentUser();
+          if (user && user.email) {
+            console.log("Usuário ativo detectado:", user.email);
+            window.location.href = "termoresponsabilidade.html";
+          }
+        } else {
+          setTimeout(waitForAuth, 400);
+        }
+      };
+      waitForAuth();
     });
   </script>
+
 </body>
 
 </html>
