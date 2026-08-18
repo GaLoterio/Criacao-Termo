@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Administração</title>
+  <link rel="icon" type="image/jpeg" href="../images/logoOMLT.jpeg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="../js/supabase-auth.js"></script>
+  <script src="../js/admin-panel.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card: #171a21;
+      --border: #2a2e37;
+      --text: #e7e9ee;
+      --muted: #9aa0ab;
+      --accent: #48bb78;
+      --danger: #e53e3e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .wrap { max-width: 920px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    header h1 { font-size: 1.4rem; margin: 0; }
+    header h1 i { color: var(--accent); margin-right: 8px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .add-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .add-form input {
+      flex: 1;
+      min-width: 220px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0d0f13;
+      color: var(--text);
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary { background: var(--accent); color: #06110b; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 0.72rem; letter-spacing: .04em; }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .badge-admin { background: rgba(72,187,120,.15); color: var(--accent); }
+    .badge-user { background: rgba(154,160,171,.15); color: var(--muted); }
+    .badge-pendente { background: rgba(237,137,54,.15); color: #ed8936; }
+    .badge-registrado { background: rgba(66,153,225,.15); color: #4299e1; }
+
+    .row-actions { display: flex; gap: 6px; }
+    .row-actions button { padding: 6px 10px; font-size: 0.8rem; }
+
+    #gate, #loading { text-align: center; padding: 60px 20px; color: var(--muted); }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div id="gate">Verificando permissões...</div>
+
+    <div id="panel" style="display: none;">
+      <header>
+        <h1><i class="fas fa-user-shield"></i>Painel de Administração</h1>
+        <button class="btn-ghost" onclick="window.location.href = '../index.html'"><i class="fas fa-arrow-left"></i> Voltar</button>
+      </header>
+
+      <div class="card">
+        <form class="add-form" id="addForm">
+          <input type="email" id="newEmail" placeholder="novo.usuario@omeletecompany.com" required>
+          <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Adicionar</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div id="loading">Carregando usuários...</div>
+        <table id="usersTable" style="display: none;">
+          <thead>
+            <tr>
+              <th>E-mail</th>
+              <th>Status</th>
+              <th>Papel</th>
+              <th>Liberado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function formatDate(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('pt-BR');
+    }
+
+    function rowTemplate(u) {
+      const statusClass = u.status === 'registrado' ? 'badge-registrado' : 'badge-pendente';
+      const roleClass = u.role === 'admin' ? 'badge-admin' : 'badge-user';
+      const roleLabel = u.role || '—';
+      const toggleRole = u.user_id
+        ? `<button class="btn-ghost" onclick="handleToggleRole('${u.user_id}', '${u.role === 'admin' ? 'user' : 'admin'}')">
+             ${u.role === 'admin' ? 'Rebaixar' : 'Promover'}
+           </button>`
+        : '';
+
+      return `
+        <tr>
+          <td>${u.email}</td>
+          <td><span class="badge ${statusClass}">${u.status}</span></td>
+          <td><span class="badge ${roleClass}">${roleLabel}</span></td>
+          <td>${formatDate(u.allowed_at)}</td>
+          <td class="row-actions">
+            ${toggleRole}
+            <button class="btn-danger" onclick="handleRemove('${u.email}')"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `;
+    }
+
+    async function loadUsers() {
+      const loading = document.getElementById('loading');
+      const table = document.getElementById('usersTable');
+      loading.style.display = 'block';
+      table.style.display = 'none';
+
+      try {
+        const users = await window.adminPanel.listUsers();
+        document.getElementById('usersBody').innerHTML = users.map(rowTemplate).join('');
+        loading.style.display = 'none';
+        table.style.display = 'table';
+      } catch (err) {
+        loading.textContent = `Erro ao carregar: ${err.message}`;
+      }
+    }
+
+    async function handleRemove(email) {
+      const confirm = await Swal.fire({
+        title: 'Revogar acesso?',
+        text: `${email} perderá o acesso ao sistema.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Revogar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#e53e3e',
+      });
+      if (!confirm.isConfirmed) return;
+
+      try {
+        await window.adminPanel.removeUser(email);
+        await Swal.fire({ icon: 'success', title: 'Acesso revogado', timer: 1200, showConfirmButton: false });
+        loadUsers();
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Erro', text: err.message });
+      }
+    }
+
+    async function handleToggleRole(userId, newRole) {
+      try {
+        await window.adminPanel.updateUserRole(userId, newRole);
+        await Swal.fire({ icon: 'success', title: 'Papel atualizado', timer: 1200, showConfirmButton: false });
+        loadUsers();
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Erro', text: err.message });
+      }
+    }
+
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('newEmail');
+      try {
+        await window.adminPanel.addUser(input.value.trim().toLowerCase());
+        input.value = '';
+        await Swal.fire({ icon: 'success', title: 'E-mail adicionado', timer: 1200, showConfirmButton: false });
+        loadUsers();
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Erro', text: err.message });
+      }
+    });
+
+    // --- Gate de acesso no client (apenas UX; a segurança real está na Edge Function) ---
+    (async function init() {
+      const user = await window.authSupabase.currentUser();
+      if (!user) {
+        window.location.href = 'register.html';
+        return;
+      }
+
+      try {
+        // A própria Edge Function retorna 403 se o usuário não for admin,
+        // então basta tentar carregar a lista para decidir o que mostrar.
+        await loadUsers();
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('panel').style.display = 'block';
+      } catch (err) {
+        document.getElementById('gate').textContent = 'Acesso negado. Esta área é restrita a administradores.';
+      }
+    })();
+  </script>
+</body>
+
+</html>

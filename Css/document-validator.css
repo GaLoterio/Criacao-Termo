@@ -1,0 +1,29 @@
+/* ============================================================
+/* Estilos para o Componente de Input de Documento (CPF/CNPJ)
+/* ============================================================ */
+
+/* Estilo para o estado de erro do input */
+.input-error {
+  border-color: #e53e3e !important; /* Vermelho para erro, !important para sobrepor outros estilos */
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
+}
+
+/* Estilo para a mensagem de erro abaixo do campo */
+.document-error-message {
+  color: #c53030; /* Tom de vermelho escuro para o texto */
+  font-size: 0.85rem; /* Tamanho de fonte menor */
+  margin-top: 8px; /* Espaçamento acima da mensagem */
+  display: none; /* Oculto por padrão */
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

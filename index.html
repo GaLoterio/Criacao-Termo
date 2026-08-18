@@ -91,6 +91,62 @@
 
   <!-- Funções específicas da página -->
   <script>
+    function forgotPassword() {
+      const email = document.getElementById("email").value.trim();
+
+      if (!email) {
+        playSound("warning");
+        return Swal.fire({
+          icon: "warning",
+          title: "Digite seu e-mail",
+          text: "Informe o e-mail para receber o link de recuperação.",
+          toast: true,
+          position: "top-end",
+          timer: 2500,
+          showConfirmButton: false
+        });
+      }
+
+      if (!window.authSupabase || !window.authSupabase.sendMagicLink) {
+        playSound("error");
+        return Swal.fire({
+          icon: "error",
+          title: "Erro!",
+          text: "Sistema de recuperação indisponível no momento.",
+          toast: true,
+          position: "top-end",
+          timer: 3000,
+          showConfirmButton: false
+        });
+      }
+
+      window.authSupabase.sendPasswordResetEmail(email)
+        .then(() => {
+          playSound("success");
+          Swal.fire({
+            icon: "success",
+            title: "Link enviado!",
+            text: "Verifique seu e-mail para criar uma nova senha.",
+            toast: true,
+            position: "top-end",
+            timer: 2500,
+            showConfirmButton: false
+          });
+        })
+        .catch((err) => {
+          playSound("error");
+          Swal.fire({
+            icon: "error",
+            title: "Erro!",
+            text: err.message,
+            toast: true,
+            position: "top-end",
+            timer: 3000,
+            showConfirmButton: false
+          });
+        });
+    }
+
     // Login
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();

@@ -50,7 +50,7 @@ async function isAllowedEmail(email) {
 // -------------------------------
 // 🧾 Registro com e-mail e senha
 // -------------------------------
-async function signUpWithEmail(email, password) {
+async function signUpWithEmail(email, password, options = {}) {
   if (!supabase) throw new Error('Supabase ainda não foi inicializado.');
   if (!email.endsWith('@omeletecompany.com')) {
     throw new Error('Somente e-mails @omeletecompany.com são permitidos.');
@@ -61,7 +61,16 @@ async function signUpWithEmail(email, password) {
     throw new Error('E-mail não autorizado. Contate o administrador.');
   }
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: options.fullName,
+        sector: options.sector,
+      },
+    },
+  });
   if (error) throw new Error(error.message);
   return data;
 }
@@ -109,6 +118,32 @@ async function sendMagicLink(email) {
 }
 
 // -------------------------------
+// 🔐 Enviar e-mail de recuperação de senha
+// -------------------------------
+async function sendPasswordResetEmail(email) {
+  if (!supabase) throw new Error('Supabase ainda não foi inicializado.');
+  if (!email.endsWith('@omeletecompany.com')) {
+    throw new Error('Somente e-mails @omeletecompany.com são permitidos.');
+  }
+
+  const permitido = await isAllowedEmail(email);
+  if (!permitido) {
+    throw new Error('E-mail não autorizado. Contate o administrador.');
+  }
+
+  const redirectBase = window.location.origin && window.location.origin !== 'null'
+    ? window.location.origin
+    : 'http://localhost';
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${redirectBase}/Pages/reset-password.html`
+  });
+
+  if (error) throw new Error(error.message);
+  return true;
+}
+
+// -------------------------------
 // 🧍 Obter usuário logado (com sessão persistente)
 // -------------------------------
 async function currentUser() {
@@ -144,7 +179,51 @@ async function currentUser() {
 }
 
 // -------------------------------
-// 🚪 Logout
+// 🔑 Obter o access_token da sessão atual
+// (usado para autenticar chamadas às Edge Functions)
+// -------------------------------
+async function getAccessToken() {
+  if (!supabase) throw new Error('Supabase ainda não foi inicializado.');
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error('Erro ao recuperar sessão:', error);
+    return null;
+  }
+  return session ? session.access_token : null;
+}
+
+// -------------------------------
+// � Obter sessão atual
+// -------------------------------
+async function getSession() {
+  if (!supabase) return null;
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error('Erro ao recuperar sessão:', error);
+    return null;
+  }
+  return session;
+}
+
+// -------------------------------
+// 🔐 Atualizar senha do usuário autenticado
+// -------------------------------
+async function updatePassword(newPassword) {
+  if (!supabase) throw new Error('Supabase ainda não foi inicializado.');
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error('A senha deve ter pelo menos 6 caracteres.');
+  }
+
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// -------------------------------
+// �🚪 Logout
 // -------------------------------
 async function signOut() {
   if (!supabase) throw new Error('Supabase ainda não foi inicializado.');
@@ -160,6 +239,15 @@ window.authSupabase = {
   signUpWithEmail,
   signInWithEmail,
   sendMagicLink,
+  sendPasswordResetEmail,
   currentUser,
+  getAccessToken,
+  getSession,
+  updatePassword,
   signOut
 };
+
+// CORREÇÃO: Expõe a URL base do Supabase globalmente de forma explícita,
+// garantindo que outros scripts (incluindo módulos) possam acessá-la
+// de forma segura através de `window.SUPABASE_URL`.
+window.SUPABASE_URL = SUPABASE_URL;

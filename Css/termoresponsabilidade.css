@@ -29,7 +29,7 @@ body {
               url('../images/imgFundo.jpeg');
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
+  background-attachment: scroll;
   background-repeat: no-repeat;
   color: var(--text-light);
   transition: var(--transition);
@@ -69,7 +69,7 @@ body::before {
 
 .container {
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px);
   border-radius: var(--border-radius);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1);
   padding: 35px 30px;
@@ -104,11 +104,12 @@ body::before {
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
   animation: shine 3s infinite;
+  will-change: transform;
 }
 
 @keyframes shine {
-  0% { left: -100%; }
-  100% { left: 100%; }
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(200%); }
 }
 
 /* Header com logo e título */
@@ -178,12 +179,12 @@ body::before {
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
 }
 
 .auth-modal {
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px);
   border-radius: var(--border-radius);
   padding: 40px;
   text-align: center;
@@ -328,24 +329,63 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   padding: 14px 18px;
   border: 2px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 12px; /* 4. Manter o border-radius arredondado */
   font-size: 0.95rem;
   font-family: inherit;
-  background: rgba(255, 255, 255, 0.8);
+  /*
+   * CORREÇÃO DE CONFLITO: Trocado 'background' por 'background-color'.
+   * Causa do Bug: Usar a propriedade 'background' (shorthand) aqui resetava
+   * as propriedades 'background-repeat', 'background-size', etc., que eram
+   * definidas na regra 'select' mais abaixo, causando a repetição da seta.
+   */
+  background-color: rgba(255, 255, 255, 0.8);
   transition: var(--transition);
   outline: none;
   line-height: 1.5;
 }
 
+/* Estilização customizada para o <select> */
+select {
+  /* 
+   * CORREÇÃO: Remove a aparência nativa do elemento.
+   * Causa do Bug: Sem isso, a seta padrão do navegador era renderizada junto com a customizada.
+   * Adicionamos os prefixos -webkit- e -moz- para compatibilidade com Chrome, Safari e Firefox.
+   */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* Ajusta o padding direito para dar espaço à nova seta, evitando que o texto fique sobre ela. */
+  padding-right: 40px;
+
+  /* Define a seta customizada como imagem de fundo. */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  /* CORREÇÃO: Garante que a imagem da seta não se repita. */
+  background-repeat: no-repeat;
+  /* CORREÇÃO: Posiciona a seta única no canto direito e centralizada verticalmente. */
+  background-position: right 0.75rem center;
+  /* CORREÇÃO: Define um tamanho explícito para o ícone da seta. */
+  background-size: 1.5em 1.5em;
+  cursor: pointer;
+}
+
+/* 5. Adiciona transição suave e efeito de glow no foco */
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2); /* 2. Sombra/glow sutil no foco */
   transform: translateY(-2px);
+}
+
+/* 2. Cor de destaque no hover para indicar interatividade */
+select:hover {
+  border-color: var(--accent);
 }
 
 input::placeholder,
@@ -480,14 +520,21 @@ body.dark-mode .container {
 }
 
 body.dark-mode input,
-body.dark-mode textarea {
-  background: var(--card-dark);
+body.dark-mode textarea,
+body.dark-mode select {
+  background-color: var(--card-dark);
   color: var(--text-dark);
   border-color: #4a5568;
 }
 
+/* Seta customizada para o modo escuro (cor mais clara para contraste) */
+body.dark-mode select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239CA3AF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
 body.dark-mode input:focus,
-body.dark-mode textarea:focus {
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }

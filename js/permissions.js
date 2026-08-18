@@ -1,34 +1,13 @@
 // Definições de permissões por setor -- Biel
 const SECTOR_PERMISSIONS = {
-  'RH': {
-    name: 'Recursos Humanos',
-    permissions: [],
-    description: 'Descrição das paginas que esse setor tem acesso',
-    color: '#667eea',
-    icon: 'fas fa-users'
-  },
   'TI': {
-    name: 'Tecnologia da Informação',
+    name: 'Tecnologia',
     permissions: [
       'gerar_termos' // Aqui você define a permissão para o setor
     ],
     description: 'Acesso aos termos de responsabilidade',
     color: '#48bb78',
     icon: 'fas fa-laptop'
-  },
-  'FINANCEIRO': {
-    name: 'Financeiro',
-    permissions: [],
-    description: 'Descrição das paginas que esse setor tem acesso',
-    color: '#ed8936',
-    icon: 'fas fa-calculator'
-  },
-  'ADMIN': {
-    name: 'Administração',
-    permissions: [],
-    description: 'Descrição das paginas que esse setor tem acesso',
-    color: '#e53e3e',
-    icon: 'fas fa-crown'
   }
 };
 

@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link href="../Css/termoresponsabilidade.css" rel="stylesheet">
+  <link href="../Css/document-validator.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Supabase -->
@@ -18,8 +19,12 @@
 
   <script>
     // Sistema de sons para alerts
+    let sharedAudioContext = null;
     function playSound(type) {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (!sharedAudioContext) {
+        sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const audioContext = sharedAudioContext;
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       oscillator.connect(gainNode);
@@ -82,7 +87,8 @@
             </div>
           </div>
 
-          <div class="form-group" id="razaoSocialField">
+          <!-- Campo de Razão Social (visível apenas para CNPJ) -->
+          <div class="form-group" id="razaoSocialField" style="display: none;">
             <label for="razaoSocial">
               <i class="fas fa-industry"></i> Razão Social (para CNPJ)
             </label>
@@ -91,14 +97,15 @@
             </div>
           </div>
 
+          <!-- Campo de Documento (CPF/CNPJ) com validação -->
           <div class="form-group">
-            <label for="documento">
+            <label for="documento" id="documento-label">
               <i class="fas fa-id-card"></i> CPF ou CNPJ
             </label>
             <div class="input-wrapper">
-              <input id="documento" type="text" placeholder="Ex: 000.000.000-00 ou 00.000.000/000-00"
-                oninput="verificarDocumento()" required>
+              <input id="documento" type="text" inputmode="numeric" placeholder="Digite o CPF ou CNPJ" required>
             </div>
+            <p id="documento-error" class="document-error-message"></p>
           </div>
 
           <div class="form-group">
@@ -118,14 +125,47 @@
               <input id="cidade" type="text" value="São Paulo" required>
             </div>
           </div>
-          
+
+          <div class="form-group">
+            <label for="emailSignatario">
+              <i class="fas fa-envelope"></i> E-mail para envio (assinatura)
+            </label>
+            <div class="input-wrapper">
+              <input id="emailSignatario" type="email" placeholder="Ex: joao@empresa.com" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="assinarComo">
+              <i class="fas fa-signature"></i> Assinar como
+            </label>
+            <div class="input-wrapper">
+              <select id="assinarComo" required>
+                <option value="contractee">Contratada</option>
+                <option value="contractor">Contratante</option>
+                <option value="legal_representative">Representante legal</option>
+                <option value="witness">Testemunha</option>
+                <option value="sign">Assinar (genérico)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="mensagemEmail">
+              <i class="fas fa-comment-dots"></i> Mensagem do e-mail (opcional)
+            </label>
+            <div class="input-wrapper">
+              <textarea id="mensagemEmail" placeholder="Ex: Olá! Segue o termo de responsabilidade para assinatura. Qualquer dúvida, é só responder este e-mail."></textarea>
+            </div>
+          </div>
+
         </div>
         <div class="informatio_to_responsibility">
           <p><strong>Importante:</strong> O ativo está vinculado ao seu nome e sob sua responsabilidade. Alterações ou trocas sem comunicação ao TI não são permitidas. Em caso de necessidade, entre em contato com o TI.</p>
         </div>
 
         <button type="button" class="btn-primary" onclick="gerarPDF()">
-          <i class="fas fa-file-pdf"></i> Gerar PDF
+          <i class="fas fa-file-pdf"></i> Gerar PDF e Enviar para Assinatura
         </button>
       </form>
     </div>
@@ -145,7 +185,14 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initDocumentInput, getCleanDocument, validateCPF, validateCNPJ } from '../js/document-validator.js';
+
+    // CORREÇÃO: Declara a variável que faltava para a URL da Edge Function.
+    // Ela utiliza `window.SUPABASE_URL`, que foi exposta pelo script `supabase-auth.js`,
+    // resolvendo o erro "SUPABASE_FUNCTIONS_URL is not defined".
+    const SUPABASE_FUNCTIONS_URL = `${window.SUPABASE_URL}/functions/v1/clicksign-proxy`;
+
     // --- Controle de autenticação Supabase ---
     document.addEventListener("DOMContentLoaded", async () => {
       if (!window.authSupabase) {
@@ -161,13 +208,25 @@
         document.querySelector(".main-container").style.filter = "blur(5px)";
       } else {
         document.getElementById("userInfo").style.display = "flex";
-        document.getElementById("userName").textContent = user.email.split("@")[0];
-        document.getElementById("userSector").textContent = "TI"; // pode futuramente puxar do perfil
+        // Agora busca os dados do perfil (user_metadata)
+        const userName = user.user_metadata.full_name || user.email.split("@")[0];
+        const userSector = user.user_metadata.sector || "Não definido";
+
+        document.getElementById("userName").textContent = userName;
+        document.getElementById("userSector").textContent = userSector;
       }
 
       document.getElementById("logoutBtn").addEventListener("click", async () => {
         await window.authSupabase.signOut();
         window.location.href = "../index.html";
+      });
+
+      // Inicializa o componente de input de Documento (CPF/CNPJ)
+      initDocumentInput({
+        inputId: 'documento',
+        errorElementId: 'documento-error',
+        labelId: 'documento-label',
+        razaoSocialFieldId: 'razaoSocialField'
       });
     });
 
@@ -200,14 +259,8 @@
       document.querySelectorAll('.form-group').forEach(group => observer.observe(group));
     });
 
-    function verificarDocumento() {
-      const documento = document.getElementById("documento").value.replace(/\D/g, "");
-      const campoRazao = document.getElementById("razaoSocialField");
-      campoRazao.classList.toggle("show", documento.length > 11);
-    }
-
     function validarFormulario() {
-      const campos = ['empregadora', 'empregado', 'documento', 'equipamentos', 'cidade'];
+      const campos = ['empregadora', 'empregado', 'documento', 'equipamentos', 'cidade', 'emailSignatario'];
       let valido = true;
       campos.forEach(campo => {
         const input = document.getElementById(campo);
@@ -220,27 +273,65 @@
           input.style.boxShadow = 'none';
         }
       });
+
+      // Validação final do Documento antes de submeter
+      const docInput = document.getElementById('documento');
+      const { type, value } = getCleanDocument(docInput);
+      let isDocValid = false;
+      if (type === 'CPF' && value.length === 11) {
+        isDocValid = validateCPF(value);
+      } else if (type === 'CNPJ' && value.length === 14) {
+        isDocValid = validateCNPJ(value);
+      }
+
+      if (!isDocValid) {
+        // Força a exibição do erro se o usuário tentar submeter sem corrigir
+        docInput.dispatchEvent(new Event('blur'));
+        valido = false;
+      }
+
       return valido;
     }
 
-    document.querySelectorAll('input, textarea').forEach(input => {
-      input.addEventListener('blur', validarFormulario);
-      input.addEventListener('input', () => {
-        if (input.value.trim()) {
-          input.style.borderColor = '#e2e8f0';
-          input.style.boxShadow = 'none';
-        }
-      });
-    });
+    async function enviarParaAssinatura({ pdfBase64DataUri, nomeArquivo, email, nomeSignatario, signAs, mensagem }) {
+      const accessToken = await window.authSupabase.getAccessToken();
+      if (!accessToken) {
+        throw new Error('Sua sessão expirou. Faça login novamente e tente de novo.');
+      }
 
-    // --- Geração do PDF ---
-    function gerarPDF() {
+      const response = await fetch(SUPABASE_FUNCTIONS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          pdfBase64DataUri,
+          nomeArquivo,
+          email,
+          nomeSignatario,
+          signAs,
+          mensagem
+        })
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const mensagemErro = data && data.error ? data.error : `Erro HTTP ${response.status}`;
+        throw new Error(mensagemErro);
+      }
+
+      return data;
+    }
+
+    async function gerarPDF() {
       if (!validarFormulario()) {
         playSound('error');
         return Swal.fire({
           icon: 'error',
           title: 'Erro!',
-          text: 'Por favor, preencha todos os campos obrigatórios',
+          text: 'Por favor, preencha todos os campos e corrija os erros indicados.',
           confirmButtonColor: '#667eea',
           position: 'top-end',
           toast: true
@@ -257,8 +348,11 @@
         const doc = new jsPDF();
         const empregadora = document.getElementById("empregadora").value;
         const empregado = document.getElementById("empregado").value;
-        const razaoSocial = document.getElementById("razaoSocial").value;
-        const documento = document.getElementById("documento").value;
+        const documentoInput = document.getElementById("documento");
+        const documentoFormatado = documentoInput.value;
+        const { type: docType } = getCleanDocument(documentoInput);
+        const isPJ = docType === 'CNPJ';
+        const razaoSocial = isPJ ? document.getElementById("razaoSocial").value : '';
         const equipamentos = document.getElementById("equipamentos").value;
         const cidade = document.getElementById("cidade").value;
 
@@ -266,11 +360,9 @@
         const dataFormatada = hoje.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
         const data = `${cidade}, ${dataFormatada}.`;
 
-        const isPJ = documento.replace(/\D/g, '').length > 11;
-
         let texto = "";
 
-        if (!isPJ) {
+        if (!isPJ) { // Texto para CPF
           texto = `
 
 EMPREGADORA: ${empregadora}
@@ -301,9 +393,9 @@ ${data}
 
 _____________________________________
 ${empregado}
-CPF nº ${documento}
+CPF nº ${documentoFormatado}
 `;
-        } else {
+        } else { // Texto para CNPJ
           texto = `
 
 CONTRATANTE: ${empregadora}
@@ -333,12 +425,12 @@ ${data}
 _____________________________________
 ${empregado}
 ${razaoSocial}
-CNPJ: ${documento}
+CNPJ: ${documentoFormatado}
 `;
         }
 
         const nomeArquivo = isPJ
-          ? `PJ_Termo_de_Responsabilidade_${razaoSocial || empregado}.pdf`
+          ? `PJ_Termo_Responsabilidade_${razaoSocial || empregado}.pdf`
           : `Termo_de_Responsabilidade_${empregado}.pdf`;
 
         doc.setFontSize(14);
@@ -353,25 +445,66 @@ CNPJ: ${documento}
         doc.setFontSize(11);
         const lines = doc.splitTextToSize(texto, 180);
         doc.text(lines, 15, 45);
+
+        // Mantém o download local do PDF (opcional, pode remover se não quiser mais isso)
         doc.save(nomeArquivo);
 
-        btn.classList.remove('loading');
-        btn.innerHTML = '<i class="fas fa-file-pdf"></i> Gerar PDF';
-        btn.disabled = false;
+        // Gera o PDF em base64 (data URI) para enviar à Edge Function
+        let pdfBase64DataUri = doc.output('datauristring');
+        const base64Puro = pdfBase64DataUri.split('base64,')[1];
+        pdfBase64DataUri = `data:application/pdf;base64,${base64Puro}`;
 
-        playSound('success');
-        Swal.fire({
-          icon: 'success',
-          title: 'Sucesso!',
-          text: 'PDF gerado com sucesso!',
-          confirmButtonColor: '#48bb78',
-          timer: 2000,
-          showConfirmButton: false,
-          position: 'top-end',
-          toast: true
+        const emailSignatario = document.getElementById("emailSignatario").value.trim();
+        const signAs = document.getElementById("assinarComo").value;
+        const mensagemPadrao = `Olá ${empregado}! Conforme preenchido no nosso site, segue o seu termo de responsabilidade para revisão e assinatura. Qualquer dúvida, responda este e-mail.`;
+        const mensagem = document.getElementById("mensagemEmail").value.trim() || mensagemPadrao;
+
+        btn.innerHTML = '<i class="fas fa-paper-plane fa-spin"></i> Enviando para assinatura...';
+
+        enviarParaAssinatura({
+          pdfBase64DataUri,
+          nomeArquivo,
+          email: emailSignatario,
+          nomeSignatario: empregado,
+          signAs,
+          mensagem
+        }).then(() => {
+          btn.classList.remove('loading');
+          btn.innerHTML = '<i class="fas fa-file-pdf"></i> Gerar PDF e Enviar para Assinatura';
+          btn.disabled = false;
+
+          playSound('success');
+          Swal.fire({
+            icon: 'success',
+            title: 'Enviado!',
+            text: `PDF gerado e enviado para ${emailSignatario} assinar.`,
+            confirmButtonColor: '#48bb78',
+            timer: 3000,
+            showConfirmButton: false,
+            position: 'top-end',
+            toast: true
+          });
+        }).catch((erro) => {
+          console.error(erro);
+          btn.classList.remove('loading');
+          btn.innerHTML = '<i class="fas fa-file-pdf"></i> Gerar PDF e Enviar para Assinatura';
+          btn.disabled = false;
+
+          playSound('error');
+          Swal.fire({
+            icon: 'error',
+            title: 'Erro ao enviar para assinatura',
+            text: erro.message || 'Verifique o console para mais detalhes.',
+            confirmButtonColor: '#e53e3e',
+            position: 'top-end',
+            toast: true
+          });
         });
       }, 1500);
     }
+
+    // Expõe a função para o `onclick` do botão
+    window.gerarPDF = gerarPDF;
   </script>
 </body>
 

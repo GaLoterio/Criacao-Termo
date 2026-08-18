@@ -1,23 +1,20 @@
 # 🧾 Gerador de Termos de Responsabilidade
 
-O **Gerador de Termos de Responsabilidade** é uma aplicação web moderna e elegante desenvolvida para automatizar e padronizar a criação de documentos formais de entrega de equipamentos e acessórios a colaboradores e prestadores de serviço.
+O **Gerador de Termos de Responsabilidade** é uma aplicação web moderna para automatizar a criação de documentos de entrega de equipamentos.
 
-O sistema foi construído com **design responsivo e animado**, utilizando **HTML5, CSS3 e JavaScript puro**, com geração automática de **arquivos PDF diretamente no navegador** e **sistema de autenticação baseado em JSON**, dispensando a necessidade de softwares adicionais, servidores ou dependências externas.
+O sistema foi construído com **HTML5, CSS3 e JavaScript puro**, integrado ao **Supabase** para autenticação e funções de backend, e utiliza a **Clicksign** para assinaturas eletrônicas.
 
 ---
 
 ## ✨ Novas Funcionalidades e Melhorias
 
-### 🔐 **Sistema de Autenticação por Setores (NOVO!)**
-- **Login e registro** de usuários com validação
-- **Controle de acesso** baseado em setores organizacionais
-- **4 setores disponíveis**: RH, TI, Financeiro e Administração
-- **Banco de dados JSON** para armazenamento de usuários
-- **Criptografia de senhas** com SHA-256
-- **Sessões seguras** com expiração automática (24h)
-- **Histórico de termos** salvo por usuário
-- **Sincronização** entre dispositivos via arquivo JSON
-- **Permissões personalizadas** por setor
+### 🔐 **Sistema de Autenticação com Supabase**
+- **Login e registro** de usuários com confirmação por e-mail.
+- **Recuperação de senha** segura integrada via e-mail (`reset-password.html`).
+- **Perfis de usuário** com armazenamento de nome e setor.
+- **Integração com Clicksign** via Edge Function segura, protegendo o token de acesso.
+- **Controle de acesso** que exige que o usuário esteja logado para usar as funcionalidades.
+- **Painel Administrativo (`admin.html`)**: Permite que administradores gerenciem a lista de e-mails autorizados (allowlist), promovam ou rebaixem usuários e revoguem acessos.
 
 ### 🎨 **Design Moderno e Responsivo**
 - **Layout responsivo** otimizado para desktop, tablet e mobile
@@ -36,6 +33,7 @@ O sistema foi construído com **design responsivo e animado**, utilizando **HTML
 - **Efeitos hover** e interações fluidas
 - **Informações do usuário** no header
 - **Botão de logout** integrado
+- **Máscaras e Validações Dinâmicas**: CPF e CNPJ validados em tempo real no front-end por algoritmos matemáticos oficiais da Receita Federal.
 
 ### 📱 **Responsividade Total**
 - **Mobile-first design** com breakpoints otimizados
@@ -60,7 +58,7 @@ Padronizar e simplificar o processo de emissão dos **Termos de Responsabilidade
 ## ⚙️ Principais Funcionalidades
 
 ### 📋 **Formulário Inteligente**
-- Formulário interativo com **validação em tempo real**
+- Formulário interativo com **validação em tempo real (CPF/CNPJ)**
 - **Detecção automática** de CPF ou CNPJ, selecionando o modelo jurídico correto
 - **Campo dinâmico** de Razão Social, exibido apenas para casos de CNPJ
 - **Ícones visuais** para cada campo, melhorando a usabilidade
@@ -105,14 +103,11 @@ O sistema foi publicado utilizando o **GitHub Pages**, permitindo:
 - **HTML5** – Estrutura semântica e acessível
 - **CSS3** – Estilização moderna com Flexbox/Grid, animações e gradientes
 - **JavaScript ES6+** – Lógica interativa, geração de PDF e autenticação
-- **Font Awesome** – Ícones profissionais e consistentes
-- **Google Fonts (Inter)** – Tipografia moderna e legível
 
-### **Sistema de Autenticação**
-- **JSON Database** – Arquivo `data/users.json` como banco de dados
-- **SHA-256** – Criptografia de senhas
-- **Local Storage** – Backup e sessões locais
-- **Web Crypto API** – Criptografia nativa do navegador
+### **Backend e Infraestrutura**
+- **Supabase Auth** – Para gerenciamento de usuários e autenticação.
+- **Supabase Edge Functions** – Para lógica de backend segura (integração com Clicksign).
+- **Clicksign API** – Para o fluxo de assinatura eletrônica.
 
 ### **Bibliotecas e Ferramentas**
 - **jsPDF** – Geração de PDF no navegador
@@ -120,60 +115,43 @@ O sistema foi publicado utilizando o **GitHub Pages**, permitindo:
 - **CSS Custom Properties** – Sistema de design consistente
 - **Intersection Observer API** – Animações baseadas em scroll
 
-### **Recursos Avançados**
-- **CSS Grid & Flexbox** – Layouts responsivos modernos
-- **CSS Animations** – Transições e efeitos visuais
-- **JSON Storage** – Persistência de dados de usuários
-- **Progressive Enhancement** – Funcionalidade em todos os navegadores
-
 ---
 
 ## 🚀 Como Usar
 
 ### **Primeiro Acesso**
 1. **Acesse** `Pages/register.html` para criar sua conta
-2. **Preencha seus dados** (nome, email, empresa)
-3. **Selecione seu setor** (RH, TI, Financeiro ou Admin)
-4. **Crie uma senha** segura (mínimo 6 caracteres)
-5. **Confirme** e clique em "Criar Conta"
+2. **Preencha** seu nome completo, e-mail e selecione seu setor.
+3. **Crie uma senha** segura (mínimo 6 caracteres)
+4. **Clique em "Criar Conta"** e verifique seu e-mail para confirmar o cadastro (caso configurado).
+   > *Nota: O cadastro só será permitido para e-mails terminados em `@omeletecompany.com` e que estejam previamente cadastrados na lista de e-mails autorizados (allowlist).*
+
+### **Painel do Administrador**
+1. Acesse `Pages/admin.html`.
+2. Administradores podem adicionar novos e-mails na allowlist, visualizar quem já se registrou, promover usuários para administradores e deletar contas de acesso do Supabase de maneira integrada.
+3. Qualquer alteração ou listagem é protegida no servidor utilizando Edge Functions, garantindo que nenhum usuário comum consiga alterar dados ou obter privilégios indevidos.
 
 ### **Login**
 1. **Acesse** `index.html` (página raiz)
 2. **Digite** email e senha
 3. **Clique** em "Entrar"
-4. O sistema reconhece automaticamente seu setor do arquivo JSON
+
+### **Recuperação de Senha**
+1. Na tela de login, clique em "Esqueci minha senha".
+2. Insira seu e-mail para receber um link de redefinição de senha.
+3. Ao clicar no link enviado por e-mail, você será redirecionado para `Pages/reset-password.html` onde definirá uma nova senha com total segurança.
 
 ### **Gerando Termos**
 1. Após o login, você será redirecionado para `Pages/termoresponsabilidade.html`
 2. **Preencha o formulário** com as informações necessárias
-3. **Valide os dados** automaticamente em tempo real
-4. **Clique em "Gerar PDF"** e aguarde o processamento
-5. **Baixe o documento** automaticamente gerado
-6. O termo será **salvo automaticamente** no seu histórico
+3. **Clique em "Gerar PDF e Enviar para Assinatura"**.
+4. O documento será gerado, baixado localmente e enviado para o e-mail do signatário via Clicksign.
 
 ---
 
 ### 💼 Desenvolvido por
 **Gabriel Loterio**  
 📧 [Contato via GitHub](https://github.com/GaLoterio)
-
----
-
-## 🎉 Novidades da Versão 2.0.0
-
-- 🔐 **Sistema de autenticação** completo com login/registro
-- 🏢 **Controle por setores** (RH, TI, Financeiro, Admin)
-- 📄 **Banco de dados JSON** para armazenamento de usuários
-- 🔒 **Criptografia de senhas** com SHA-256
-- 💾 **Histórico de termos** por usuário
-- 🔄 **Sincronização** entre dispositivos via arquivo JSON
-- ✨ **Design completamente renovado** com interface moderna
-- 📱 **Responsividade total** para todos os dispositivos
-- 🎨 **Animações e efeitos visuais** profissionais
-- 🌙 **Modo escuro/claro** com alternância suave
-- ⚡ **Performance otimizada** e carregamento rápido
-- 🔧 **Validação inteligente** com feedback visual
-- 🎯 **Experiência do usuário** significativamente melhorada
 
 ## 📁 Estrutura do Projeto
 
