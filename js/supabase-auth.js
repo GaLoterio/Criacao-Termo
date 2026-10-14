@@ -131,12 +131,8 @@ async function sendPasswordResetEmail(email) {
     throw new Error('E-mail não autorizado. Contate o administrador.');
   }
 
-  const redirectBase = window.location.origin && window.location.origin !== 'null'
-    ? window.location.origin
-    : 'http://localhost';
-
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${redirectBase}/Pages/reset-password.html`
+    redirectTo: new URL('Pages/reset-password.html', window.location.href).href
   });
 
   if (error) throw new Error(error.message);

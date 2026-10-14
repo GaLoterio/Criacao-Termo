@@ -139,7 +139,7 @@ O sistema foi publicado utilizando o **GitHub Pages**, permitindo:
 ### **Recuperação de Senha**
 1. Na tela de login, clique em "Esqueci minha senha".
 2. Insira seu e-mail para receber um link de redefinição de senha.
-3. Ao clicar no link enviado por e-mail, você será redirecionado para `Pages/reset-password.html` onde definirá uma nova senha com total segurança.
+3. Ao clicar no link enviado por e-mail, você será redirecionado para `Pages/reset-password.html` onde definirá uma nova senha com total segurança. O endereço de recuperação preserva automaticamente o caminho da aplicação, inclusive quando hospedada em um subdiretório no GitHub Pages.
 
 ### **Gerando Termos**
 1. Após o login, você será redirecionado para `Pages/termoresponsabilidade.html`
