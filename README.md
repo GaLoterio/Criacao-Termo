@@ -141,6 +141,15 @@ O sistema foi publicado utilizando o **GitHub Pages**, permitindo:
 2. Insira seu e-mail para receber um link de redefinição de senha.
 3. Ao clicar no link enviado por e-mail, você será redirecionado para `Pages/reset-password.html` onde definirá uma nova senha com total segurança. O endereço de recuperação preserva automaticamente o caminho da aplicação, inclusive quando hospedada em um subdiretório no GitHub Pages.
 
+#### Configuração necessária no Supabase
+
+Em **Authentication → URL Configuration**, configure a URL publicada da aplicação como **Site URL** (por exemplo, `https://galoterio.github.io/Criacao-Termo/`) e adicione às **Redirect URLs** as páginas de redefinição usadas em produção e desenvolvimento:
+
+- `https://galoterio.github.io/Criacao-Termo/Pages/reset-password.html`
+- `http://localhost:3000/Pages/reset-password.html`
+
+Se a aplicação usar outro domínio ou porta local, substitua os endereços pelos correspondentes. A URL de redirecionamento precisa estar permitida no Supabase; caso contrário, o link pode voltar para a **Site URL**. Links OTP expirados ou já utilizados não podem ser reaproveitados: solicite um novo e use o mais recente.
+
 ### **Gerando Termos**
 1. Após o login, você será redirecionado para `Pages/termoresponsabilidade.html`
 2. **Preencha o formulário** com as informações necessárias

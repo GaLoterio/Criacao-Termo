@@ -11,6 +11,20 @@
   <link href="Css/index.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+  <script>
+    (() => {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const error = params.get("error");
+      if (!error) return;
+
+      window.authRedirectError = {
+        error,
+        code: params.get("error_code")
+      };
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    })();
+  </script>
+
   <!-- Supabase principal -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <!-- Fallback local -->
@@ -107,7 +121,7 @@
         });
       }
 
-      if (!window.authSupabase || !window.authSupabase.sendMagicLink) {
+      if (!window.authSupabase || !window.authSupabase.sendPasswordResetEmail) {
         playSound("error");
         return Swal.fire({
           icon: "error",
@@ -187,6 +201,20 @@
 
     // Garantia de inicialização antes do uso
     document.addEventListener("DOMContentLoaded", async () => {
+      if (window.authRedirectError) {
+        const isExpiredLink = window.authRedirectError.code === "otp_expired";
+        playSound("error");
+        await Swal.fire({
+          icon: "error",
+          title: isExpiredLink ? "Link expirado ou já utilizado" : "Não foi possível validar o link",
+          text: isExpiredLink
+            ? "Solicite uma nova redefinição de senha nesta página e use o link mais recente recebido por e-mail."
+            : "Solicite um novo link de recuperação de senha nesta página.",
+          confirmButtonText: "Entendi"
+        });
+        document.getElementById("email").focus();
+      }
+
       const waitForAuth = async () => {
         if (window.authSupabase && window.authSupabase.currentUser) {
           const user = await window.authSupabase.currentUser();
